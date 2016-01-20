@@ -1,0 +1,140 @@
+//Shawn Peng
+//This is the DAG data structure header file, defining the DAG class,
+//the Vertex class and the Edge class.
+
+#include <vector>
+#include <list>
+#include <map>
+
+using namespace std;
+
+namespace NS_DAG
+{
+
+struct Edge
+{
+	int vstart;
+	int vend;
+	Edge(int vs,int ve):vstart(vs), vend(ve){}
+};
+
+typedef list<int> IdList;
+
+typedef list<Edge> EdgeList;
+
+union PrivDataUnion{
+	long long dlonglong;
+	long dlong;
+	int dint;
+	float dfloat;
+	double ddouble;
+	void *dptr;
+	PrivDataUnion(): dlonglong(0) {}
+};
+
+typedef int (*PrivDataFn)(PrivDataUnion);
+
+class Vertex
+{
+private:
+	int id;
+	list<Edge> edges;
+	typedef EdgeList::iterator EdgeIter;
+	IdList parents;
+	PrivDataUnion privdata;
+public:
+	Vertex(int id);
+	int getId() const;
+	void print(int depth) const;
+	void printId() const;
+	void addEdge(int vstart, int vend);
+	void addParent(int id);
+	int removeEdge(int vend);
+	int removeParent(int parent);
+	int getParentNum();
+	int getParentList(IdList &list) const;
+	void getChildList(IdList &list) const;
+
+	void setPrivData(PrivDataUnion data);
+	PrivDataUnion getPrivData() const;
+};
+
+typedef list<Vertex> VertexList;
+typedef VertexList::iterator VertexIter;
+
+class DAG
+{
+private:
+	VertexList vertices; //list of vertices
+	map<int, VertexIter> vindex; //index to find vertex with certain id in the list
+	typedef map<int, VertexIter> VertexMap;
+	typedef VertexMap::iterator VertexMapIter;
+
+	int rootid;
+
+	PrivDataUnion privdata;
+
+protected:
+	int rebuildIndex();
+
+	static int transferSubdag(DAG &src, DAG &dst, int id);
+	
+	//not using
+	static int transferNode(DAG &src, DAG &dst, VertexIter ind);
+
+
+public:
+	DAG() {};
+	DAG(const DAG &other);
+	int addVertex(int id);
+
+	int addEdge(int vstart, int vend);
+
+	int setPrivData(int id, PrivDataUnion data);
+	PrivDataUnion getPrivData(int id) const;
+
+	int addDAGAsChildOf(int parent, const DAG &other);
+	int addDAGAsChildOf(const IdList &parents, const DAG &other);
+
+	//NULL if not found
+	Vertex *findVertex(int id) const;
+
+	int getVertexList(IdList &list) const;
+
+	int getChildList(int id, IdList &list) const;
+
+	//int getAllParent(int id, IdList parents);
+	int getParentNum(int id);
+	int getParentList(int id, IdList &list) const;
+
+	void setRoot(int id);
+	int getRoot() const;
+
+	int getVertexNum() const;
+
+	void print(int id = -1) const;
+	void print(PrivDataFn fn) const;
+	void print(int id, PrivDataFn fn) const;
+	void printSubdag(const Vertex &v, int depth) const;
+	void printSubdag(const Vertex &v, int depth, PrivDataFn fn) const;
+	void printVertexes(PrivDataFn fn = 0) const;
+	void printEdges() const;
+
+	//int merge(const DAG &other, DAG &dest); //
+
+	int removeVertex(int id);
+	int removeEdge(int idstart, int idend);
+	// remove the subdag with root whose id is rootid
+	// the subdag must be a tree
+	int removeSubdag(int rootid, DAG &subdag);
+	
+	//check if the subdag with rootid is a tree
+	bool isSubdagTree(int rootid);
+
+	DAG &operator =(const DAG &other);
+
+};
+
+
+};
+
