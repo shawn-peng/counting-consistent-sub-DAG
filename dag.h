@@ -1,6 +1,9 @@
 //Shawn Peng
 //This is the DAG data structure header file, defining the DAG class,
 //the Vertex class and the Edge class.
+//This DAG data structure uses "map" to index the vertices by id, and each
+//vertex object saves the edges starting from it and its parent's (or parents')
+//id. It also saves an privdata which is defined and used by the user.
 
 #include <vector>
 #include <list>

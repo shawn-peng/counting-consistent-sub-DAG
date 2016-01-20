@@ -1,5 +1,6 @@
 //Shawn Peng
-//This is the main algorithm source file.
+//This is the main algorithm source file. Detailed explanation please refer
+//to the report.
 
 #include "dag.h"
 #include "common.h"
