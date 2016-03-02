@@ -1,5 +1,5 @@
 #CPPFLAGS+=-O3 -lstdc++
-CPPFLAGS+=-g3 -lstdc++
+CPPFLAGS+=$(OPT) -lstdc++
 
 all: graph_alg
 

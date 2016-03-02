@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <assert.h>
+#include <string.h>
 
 using namespace NS_DAG;
 
@@ -101,10 +102,39 @@ DAG *create_dag_from_file(const char *filename)
 
 	DAG *g = new DAG();
 
+	int go_prefix = true;
+	int parent_first = false;
+
+	if (strcmp(col1_label, "parent") == 0 ||
+			strcmp(col1_label, "source") == 0)
+	{
+		parent_first = true;
+	}
+
 	while (ret == 2)
 	{
 		int vstart, vend;
-		ret = fscanf(f, "GO:%d\tGO:%d\n", &vend, &vstart);
+
+		if (go_prefix)
+		{
+			ret = fscanf(f, "GO:%d\tGO:%d\n", &vend, &vstart);
+		}
+		else
+		{
+			ret = fscanf(f, "%d%d\n", &vend, &vstart);
+		}
+
+		if (ret != 2)
+		{
+			go_prefix = false;
+			ret = fscanf(f, "%d%d\n", &vend, &vstart);
+		}
+
+		if (parent_first)
+		{
+			swap(vend, vstart);
+		}
+
 		if (ret != 2)
 		{
 			if (errno)
@@ -249,6 +279,7 @@ bool check_parent(DAG *g, int id)
 		Vertex *v = g->findVertex(*pidit);
 		if (v == NULL)
 		{
+			// printf("parent %07d is not in the dag.\n", *pidit);
 			return false;
 		}
 	}
@@ -304,6 +335,8 @@ int enum_possibilities(DAG *g, DAG cur_subdag, list<Edge> fringe, IdList needed,
 			//this node can't be choosen
 			//Because we checked before putting the node into fringe,
 			//this shouldn't happen.
+			printf("%07d's parent is missing.\n", vid);
+			cur_subdag.print();
 			assert(0);
 			return 0;
 		}
@@ -380,6 +413,10 @@ int get_consistent_subdag(DAG *g, int rootid, list<DAG> &subdags)
 	vroot->getChildList(childids);
 	FOR_EACH_IN_CONTAINER_REVERSE(chidit, childids)
 	{
+		if (parent_num_map[*chidit] > 1)
+		{
+			continue;
+		}
 		fringe.push_front(Edge(rootid,*chidit));
 	}
 
@@ -534,6 +571,7 @@ int get_path_to_root_with_exclusion(DAG *g, int id,
 	IdList parents;
 	get_parents(id, parents);
 
+	// parents in path
 	IdList pathp;
 	if (v != NULL)
 	{
@@ -566,9 +604,14 @@ int get_path_to_root_with_exclusion(DAG *g, int id,
 	FOR_EACH_IN_CONTAINER(iter, parents)
 	{
 		int pid = *iter;
-		if (pid != rootid)
+		if (pid == rootid)
 		{
-			get_path_to_root(g, pid, subdag);
+			continue;
+		}
+		int ret = get_path_to_root_with_exclusion(g, pid, exclude, subdag);
+		if (ret != 0)
+		{
+			return 1;
 		}
 	}
 	return 0;
@@ -639,6 +682,8 @@ double count_comb_with_fixed_nodes(DAG *g, const DAG &fixed)
 		total *= count_subdag_cutting_children(
 				g, *fixedvit, fixed_children);
 	}
+
+	return total;
 }
 
 // for all vertices in list 'nodes', generate the possible combinations
@@ -698,10 +743,21 @@ int gen_path_combinations(DAG *g, IdList nodes,
 	return 0;
 }
 
-// similar to above function, but rather than save all possible paths
-// to a list, calculate the number of consistent sub-DAG's with the
-// fixed path when each path is finished. Then sum them up.
-// This way we can reduce the space complexity.
+/**
+ * count_consistent_subdag_by_combining_indep_mpnodes
+ *
+ * @desc similar to above function, but rather than save all possible paths
+ * to a list, calculate the number of consistent sub-DAG's with the
+ * fixed path when each path is finished. Then sum them up.
+ * This way we can reduce the space complexity.
+ * 
+ * @para g, DAG to count
+ * @para nodes, MP nodes to combine, there might be some nodes that are
+ * dependent
+ * @para exclude, nodes that are not choosen in previous process
+ * @para fixed, the fixed node which is what we are adding
+ * @para fixed_path, the fixed path for now
+ */
 double count_consistent_subdag_by_combining_indep_mpnodes(
 		DAG *g, IdList nodes, IdList &exclude, int fixed,
 		const DAG &fixed_path)
@@ -1199,7 +1255,7 @@ double count_consistent_subdag_for_independent_subdag(DAG *g)
 	double total;
 	total = count_consistent_subdag_tree(&modified, rootid);
 
-	//modified.print(print_privdata);
+	modified.print(print_privdata);
 
 	//printf("--------------------------------------------\n");
 
@@ -1232,8 +1288,8 @@ double count_consistent_subdag_for_independent_subdag(DAG *g)
 		modified.addDAGAsChildOf(parents, subdag);
 		mpnodes.push_back(srid);
 
-		//printf("Updated: \n");
-		//modified.print();
+		printf("Updated: \n");
+		modified.print();
 
 		double num = count_comb_adding_subdag(&modified, mpnodes, subdag);
 		printf("num for adding subdag %07d: %.0f\n", srid, num);
@@ -1326,7 +1382,7 @@ void free_dag(DAG *g)
 
 int main(int argc, char *argv[])
 {
-	const char *datafile = "Graphs/mini-tree.txt";
+	const char *datafile = "data/basic_graphs/mini-tree.txt";
 	int rootid = 1;
 	if (argc >= 2)
 	{
