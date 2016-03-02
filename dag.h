@@ -119,7 +119,9 @@ public:
 
 	int getVertexNum() const;
 
-	void print(int id = -1) const;
+	void print() const;
+	void print(const IdList &ids) const;
+	void print(int id) const;
 	void print(PrivDataFn fn) const;
 	void print(int id, PrivDataFn fn) const;
 	void printSubdag(const Vertex &v, int depth) const;

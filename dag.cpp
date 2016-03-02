@@ -459,13 +459,20 @@ void DAG::printSubdag(const Vertex &v, int depth, PrivDataFn fn) const
 }
 
 
+void DAG::print() const
+{
+	FOR_EACH_IN_CONTAINER(idit, roots)
+	{
+		Vertex *v = findVertex(*idit);
+		assert(v);
+
+		printSubdag(*v, 0);
+	}
+	return;
+}
+
 void DAG::print(int id) const
 {
-	if (id == -1)
-	{
-		id = rootid;
-	}
-
 	Vertex *v = findVertex(id);
 	if (v == NULL)
 	{
@@ -473,14 +480,7 @@ void DAG::print(int id) const
 		return;
 	}
 	
-
 	printSubdag(*v, 0);
-	
-
-	//FOR_EACH_IN_CONTAINER(iter, vertices)
-	//{
-	//	iter->print(1);
-	//}
 	return;
 }
 
@@ -491,27 +491,28 @@ void DAG::print(PrivDataFn fn) const
 		int id = *idit;
 
 		Vertex *v = findVertex(id);
+<<<<<<< Updated upstream
 		if (v == NULL) {
 			printf("Error in %s(): id:%07d not found.\n", __FUNCTION__, id);
 			return;
 		}
 		printSubdag(*v, 0, fn);
 	}
+=======
+		if (v == NULL)
+		{
+			printf("Error in %s(): id:%07d not found.\n", __FUNCTION__, id);
+			return;
+		}
+>>>>>>> Stashed changes
 
-	//FOR_EACH_IN_CONTAINER(iter, vertices)
-	//{
-	//	iter->print(1);
-	//}
+		printSubdag(*v, 0, fn);
+	}
 	return;
 }
 
 void DAG::print(int id, PrivDataFn fn) const
 {
-	if (id == -1)
-	{
-		id = rootid;
-	}
-
 	Vertex *v = findVertex(id);
 	if (v == NULL)
 	{
@@ -519,14 +520,7 @@ void DAG::print(int id, PrivDataFn fn) const
 		return;
 	}
 	
-
 	printSubdag(*v, 0, fn);
-	
-
-	//FOR_EACH_IN_CONTAINER(iter, vertices)
-	//{
-	//	iter->print(1);
-	//}
 	return;
 }
 
