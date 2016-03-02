@@ -145,7 +145,8 @@ DAG::DAG(const DAG &other)
 DAG &DAG::operator =(const DAG &other)
 {
 	vertices = other.vertices;
-	rootid = other.rootid;
+	// rootid = other.rootid;
+	roots = other.roots;
 
 	this->rebuildIndex();
 	return *this;
@@ -301,13 +302,47 @@ int DAG::getParentList(int id, IdList &list) const
 
 void DAG::setRoot(int id)
 {
-	rootid = id;
+	roots.clear();
+	roots.push_back(id);
 	return;
 }
 
 int DAG::getRoot() const
 {
-	return rootid;
+	return roots.front();
+}
+
+void DAG::addToRootList(int id)
+{
+	DECLARE_ITERATER(pos, roots);
+	pos = find(roots.begin(), roots.end(), id);
+	if (pos != roots.end())
+	{
+		return;
+	}
+
+	roots.push_back(id);
+	return;
+}
+
+void DAG::removeFromRootList(int id)
+{
+	DECLARE_ITERATER(pos, roots);
+	pos = find(roots.begin(), roots.end(), id);
+	if (pos == roots.end())
+	{
+		printf("%07d is not a root.", id);
+		return;
+	}
+
+	roots.erase(pos);
+	return;
+}
+
+void DAG::getRootList(IdList &list) const
+{
+	list.insert(list.end(), roots.begin(), roots.end());
+	return;
 }
 
 int DAG::getVertexNum() const
@@ -451,18 +486,17 @@ void DAG::print(int id) const
 
 void DAG::print(PrivDataFn fn) const
 {
-	int id = rootid;
-
-	Vertex *v = findVertex(id);
-	if (v == NULL)
+	FOR_EACH_IN_CONTAINER(idit, roots)
 	{
-		printf("Error in %s(): id:%07d not found.\n", __FUNCTION__, id);
-		return;
-	}
-	
+		int id = *idit;
 
-	printSubdag(*v, 0, fn);
-	
+		Vertex *v = findVertex(id);
+		if (v == NULL) {
+			printf("Error in %s(): id:%07d not found.\n", __FUNCTION__, id);
+			return;
+		}
+		printSubdag(*v, 0, fn);
+	}
 
 	//FOR_EACH_IN_CONTAINER(iter, vertices)
 	//{

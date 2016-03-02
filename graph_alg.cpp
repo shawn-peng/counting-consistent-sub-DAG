@@ -754,7 +754,8 @@ int gen_path_combinations(DAG *g, IdList nodes,
  * @para g, DAG to count
  * @para nodes, MP nodes to combine, there might be some nodes that are
  * dependent
- * @para exclude, nodes that are not choosen in previous process
+ * @para exclude, nodes that are not choosen in previous process,
+ * this works as a stack
  * @para fixed, the fixed node which is what we are adding
  * @para fixed_path, the fixed path for now
  */

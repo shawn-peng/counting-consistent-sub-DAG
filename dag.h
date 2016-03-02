@@ -73,7 +73,8 @@ private:
 	typedef map<int, VertexIter> VertexMap;
 	typedef VertexMap::iterator VertexMapIter;
 
-	int rootid;
+	// int rootid;
+	IdList roots;
 
 	PrivDataUnion privdata;
 
@@ -112,6 +113,9 @@ public:
 
 	void setRoot(int id);
 	int getRoot() const;
+	void addToRootList(int id);
+	void removeFromRootList(int id);
+	void getRootList(IdList &list) const;
 
 	int getVertexNum() const;
 
