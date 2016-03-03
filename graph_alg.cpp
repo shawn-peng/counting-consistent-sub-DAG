@@ -823,6 +823,14 @@ double count_consistent_subdag_by_combining_indep_mpnodes(
 	return total;
 }
 
+double count_consistent_subdag_by_cutting_fixed_path(DAG *g, int fixed, const DAG &fixed_path)
+{
+	// copy DAG
+	DAG new_g(*g);
+
+	// cut fixed path
+}
+
 
 double count_comb_adding_subdag(DAG *g, IdList mpnodes, const DAG &subdag)
 {
@@ -855,8 +863,10 @@ double count_comb_adding_subdag(DAG *g, IdList mpnodes, const DAG &subdag)
 
 	// calculate the number of possibilities
 	IdList exclude;
-	total = count_consistent_subdag_by_combining_indep_mpnodes(
-			g, indep_mpnodes, exclude, srid, pathdag);
+	//total = count_consistent_subdag_by_combining_indep_mpnodes(
+	//		g, indep_mpnodes, exclude, srid, pathdag);
+	
+	total = count_consistent_subdag_by_cutting_fixed_path(g, srid, pathdag);
 
 	return total;
 }

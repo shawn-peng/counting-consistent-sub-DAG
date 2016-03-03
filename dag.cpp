@@ -8,6 +8,7 @@
 #include <vector>
 #include <list>
 #include <map>
+#include <algorithm>
 #include <string>
 #include <stdio.h>
 #include <stdlib.h>
@@ -491,20 +492,11 @@ void DAG::print(PrivDataFn fn) const
 		int id = *idit;
 
 		Vertex *v = findVertex(id);
-<<<<<<< Updated upstream
-		if (v == NULL) {
-			printf("Error in %s(): id:%07d not found.\n", __FUNCTION__, id);
-			return;
-		}
-		printSubdag(*v, 0, fn);
-	}
-=======
 		if (v == NULL)
 		{
 			printf("Error in %s(): id:%07d not found.\n", __FUNCTION__, id);
 			return;
 		}
->>>>>>> Stashed changes
 
 		printSubdag(*v, 0, fn);
 	}
