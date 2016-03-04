@@ -5,6 +5,10 @@
 //vertex object saves the edges starting from it and its parent's (or parents')
 //id. It also saves an privdata which is defined and used by the user.
 
+
+#ifndef __DAG_H_
+#define __DAG_H_
+
 #include <vector>
 #include <list>
 #include <map>
@@ -47,6 +51,8 @@ private:
 	PrivDataUnion privdata;
 public:
 	Vertex(int id);
+	Vertex(const Vertex &other);
+
 	int getId() const;
 	void print(int depth) const;
 	void printId() const;
@@ -82,7 +88,7 @@ protected:
 	int rebuildIndex();
 
 	static int transferSubdag(DAG &src, DAG &dst, int id);
-	
+
 	//not using
 	static int transferNode(DAG &src, DAG &dst, VertexIter ind);
 
@@ -94,14 +100,21 @@ public:
 
 	int addEdge(int vstart, int vend);
 
+	void setPrivData(PrivDataUnion data);
+	PrivDataUnion getPrivData() const;
+
 	int setPrivData(int id, PrivDataUnion data);
 	PrivDataUnion getPrivData(int id) const;
+	void copyVertexPrivData(const DAG &other);
+	void clearVertexPrivData();
 
 	int addDAGAsChildOf(int parent, const DAG &other);
 	int addDAGAsChildOf(const IdList &parents, const DAG &other);
+	int transplantAsChildOf(const IdList &parents, DAG &other);
 
 	//NULL if not found
 	Vertex *findVertex(int id) const;
+	bool checkVertex(int id) const;
 
 	int getVertexList(IdList &list) const;
 
@@ -116,6 +129,7 @@ public:
 	void addToRootList(int id);
 	void removeFromRootList(int id);
 	void getRootList(IdList &list) const;
+	bool isRoot(int id) const;
 
 	int getVertexNum() const;
 
@@ -135,8 +149,11 @@ public:
 	int removeEdge(int idstart, int idend);
 	// remove the subdag with root whose id is rootid
 	// the subdag must be a tree
-	int removeSubdag(int rootid, DAG &subdag);
-	
+	int removeSubdagRootAt(int rootid, DAG &subdag);
+
+	// remove the exact subdag
+	int removeSubdag(const DAG &subdag);
+
 	//check if the subdag with rootid is a tree
 	bool isSubdagTree(int rootid);
 
@@ -147,3 +164,4 @@ public:
 
 };
 
+#endif /* __DAG_H_ */
