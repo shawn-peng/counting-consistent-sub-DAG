@@ -230,6 +230,11 @@ int print_privdata_int(PrivDataUnion data)
 	return printf("%d", data.dint);
 }
 
+int print_privdata_ptr(PrivDataUnion data)
+{
+	return printf("%p", data.dptr);
+}
+
 int print_privdata_pathinfo(PrivDataUnion data)
 {
 	PathInfo *pinfo = (PathInfo *)data.dptr;
@@ -375,7 +380,7 @@ void freePathInfo(void *ptr)
 {
 	if (ptr != NULL)
 	{
-		free(ptr);
+		delete (PathInfo *)ptr;
 	}
 	return;
 }
@@ -383,8 +388,9 @@ void freePathInfo(void *ptr)
 int free_nodes_pathinfo(DAG *g)
 {
 	IdList fringe;
-	int rootid = g->getRoot();
-	fringe.push_back(rootid);
+	//int rootid = g->getRoot();
+	//fringe.push_back(rootid);
+	g->getRootList(fringe);
 
 	while (!fringe.empty())
 	{
@@ -1012,7 +1018,7 @@ int get_consistent_subdag(DAG *g, int rootid, list<DAG> &subdags)
 
 	ret = enum_possibilities(g, g0, fringe, IdList(), subdags);
 
-	free(parentInfo);
+	delete parentInfo;
 	privdata.dptr = NULL;
 	g->setPrivData(privdata);
 
@@ -1094,7 +1100,7 @@ double count_consistent_subdag_tree(DAG *g, int rootid)
 	double total = v->getPrivData().ddouble;
 	if (total != 0)
 	{
-		printf("num %.0f for %07d.\n", total, rootid);
+		//printf("num %.0f for %07d.\n", total, rootid);
 		return total;
 	}
 
@@ -1458,7 +1464,7 @@ double count_consistent_subdag_by_cutting_fixed_path(DAG *g, int fixed, const DA
 		printf("Nothing left after cut, all nodes in the DAG needs to be fixed.\n");
 	}
 
-	free(parentInfo);
+	delete parentInfo;
 	privdata.dptr = NULL;
 	modified.setPrivData(privdata);
 
@@ -1604,9 +1610,9 @@ double count_consistent_subdag_for_independent_subdag(DAG *g)
 //	PrivDataUnion priv;
 //	priv.ddouble = total;
 //	g->setPrivData(rootid, priv);
-	printf("num for subdag with roots (");
-	print_id_list(roots);
-	printf("): %.0f.\n", total);
+	//printf("num for subdag with roots (");
+	//print_id_list(roots);
+	//printf("): %.0f.\n", total);
 
 	return total;
 }
@@ -1686,7 +1692,7 @@ double count_consistent_subdag(DAG *g, int rootid)
 	double total = count_consistent_subdag_for_independent_subdag(&modified);
 	//modified.print(print_privdata);
 
-	free(parentInfo);
+	delete parentInfo;
 	privdata.dptr = NULL;
 	modified.setPrivData(privdata);
 
@@ -1763,7 +1769,7 @@ double count_consistent_subdag(DAG *g, const IdList &rootlist)
 	//modified.print(print_privdata);
 
 
-	free(parentInfo);
+	delete parentInfo;
 	privdata.dptr = NULL;
 	modified.setPrivData(privdata);
 
