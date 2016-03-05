@@ -320,7 +320,7 @@ int gen_parent_num_map(DAG *g, int parent)
 	FOR_EACH_IN_CONTAINER(iter, children)
 	{
 		parent_num_map[*iter] = g->getParentNum(*iter);
-		printf("%07d:%d\n", *iter, parent_num_map[*iter]);
+		//printf("%07d:%d\n", *iter, parent_num_map[*iter]);
 		gen_parent_num_map(g, *iter);
 	}
 
@@ -828,6 +828,7 @@ int decompose_dag(DAG *g, const IdList mpnodes, list<DAG> &subdags)
 		{
 			if (g->isRoot(newrootid))
 			{
+				newrootid == -1;
 				break;
 			}
 			rootid = newrootid;
@@ -844,12 +845,12 @@ int decompose_dag(DAG *g, const IdList mpnodes, list<DAG> &subdags)
 			// subdag with root rootid
 			covered_mpnodes.clear();
 			get_mpnodes_under_node(&pathinfo_dag, newrootid, covered_mpnodes);
-			printf("mpnodes under %07d: ", newrootid);
-			print_id_list(covered_mpnodes);
-			printf("\n");
+			//printf("mpnodes under %07d: ", newrootid);
+			//print_id_list(covered_mpnodes);
+			//printf("\n");
 		}
 
-		if (newrootid == g->getRoot() || newrootid == -1)
+		if (newrootid == -1 || g->isRoot(newrootid))
 		{
 			//return 0;
 			// can't be decomposed
@@ -1447,8 +1448,8 @@ double count_consistent_subdag_by_cutting_fixed_path(DAG *g, int fixed, const DA
 	// Check there is something left
 	if (rootlist.size() != 0)
 	{
-		printf("DAG after fixed path cutted.\n");
-		modified.print(print_privdata);
+		//printf("DAG after fixed path cutted.\n");
+		//modified.print(print_privdata);
 		total += count_consistent_subdag(&modified, rootlist);
 	}
 	else
@@ -1548,7 +1549,7 @@ double count_consistent_subdag_for_independent_subdag(DAG *g)
 	double total;
 	total = count_consistent_subdag_tree(&modified);
 
-	modified.print(print_privdata);
+	//modified.print(print_privdata);
 
 	//printf("--------------------------------------------\n");
 
@@ -1587,8 +1588,8 @@ double count_consistent_subdag_for_independent_subdag(DAG *g)
 		modified.transplantAsChildOf(parents, subdag);
 		mpnodes.push_back(srid);
 
-		printf("Updated: \n");
-		modified.print();
+		//printf("Updated: \n");
+		//modified.print();
 
 		double num = count_consistent_subdag_adding_subdag(&modified, mpnodes, subdag);
 		printf("num for adding subdag %07d: %.0f\n", srid, num);
@@ -1642,9 +1643,9 @@ double count_consistent_subdag(DAG *g, int rootid)
 
 	decompose_dag(&modified, mpnodes, decomp_subdags);
 
-	printf("decomposed subdags.\n");
-	modified.print();
-	print_subdag_list(decomp_subdags);
+	//printf("decomposed subdags.\n");
+	//modified.print();
+	//print_subdag_list(decomp_subdags);
 
 	ParentMap &parent_map = get_parent_info(&modified).parentMap;
 
@@ -1655,7 +1656,7 @@ double count_consistent_subdag(DAG *g, int rootid)
 		DAG *subdag = &*iter;
 		free_nodes_pathinfo(subdag);
 
-		subdag->printEdges();
+		//subdag->printEdges();
 
 		// the subdag can have only one parent, that's how we decomposed
 		int srid = subdag->getRoot();
@@ -1719,9 +1720,9 @@ double count_consistent_subdag(DAG *g, const IdList &rootlist)
 
 	decompose_dag(&modified, mpnodes, decomp_subdags);
 
-	printf("decomposed subdags.\n");
-	modified.print();
-	print_subdag_list(decomp_subdags);
+	//printf("decomposed subdags.\n");
+	//modified.print();
+	//print_subdag_list(decomp_subdags);
 
 	ParentMap &parent_map = get_parent_info(&modified).parentMap;
 
@@ -1732,7 +1733,7 @@ double count_consistent_subdag(DAG *g, const IdList &rootlist)
 		DAG *subdag = &*iter;
 		//free_nodes_pathinfo(subdag);
 
-		subdag->printEdges();
+		//subdag->printEdges();
 
 		// the subdag can have only one parent, that's how we decomposed
 		int srid = subdag->getRoot();
@@ -1794,7 +1795,7 @@ int main(int argc, char *argv[])
 	//g->print(988);
 
 	list<DAG> subdags;
-	if (g->getVertexNum() <= 25)
+	if (g->getVertexNum() <= 35)
 	{
 		// sanity check
 		ret = get_consistent_subdag(g, rootid, subdags);
