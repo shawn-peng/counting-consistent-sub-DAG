@@ -1776,6 +1776,58 @@ double count_consistent_subdag(DAG *g, const IdList &rootlist)
 	return total;
 }
 
+/**
+ * Find all path to all MP nodes, substitude all trees left with their roots
+ */
+int reduce_dag(DAG *g)
+{
+	DAG modified(*g);
+	DAG pathinfo_dag(*g);
+	pathinfo_dag.clearVertexPrivData();
+
+	PrivDataUnion priv = g->getPrivData();
+	if (priv.dptr == NULL)
+	{
+		priv.dptr = new ParentInfo();
+	}
+	pathinfo_dag.setPrivData(priv);
+
+	IdList roots;
+	pathinfo_dag.getRootList(roots);
+
+	FOR_EACH_IN_CONTAINER(rootit, roots)
+	{
+		gen_parent_num_map(&pathinfo_dag, *rootit);
+		gen_parent_map(&pathinfo_dag, *rootit);
+	}
+
+	IdList mpnodes;
+	get_mpnodes(&pathinfo_dag, mpnodes);
+	gen_mpnode_pathinfo(&pathinfo_dag, mpnodes);
+
+	DAG pathdag;
+	FOR_EACH_IN_CONTAINER(nodeit, mpnodes)
+	{
+		get_path_to_root(&pathinfo_dag, *nodeit, pathdag);
+	}
+
+	// remove this path, then what's left should be all trees
+	modified.removeSubdag(pathdag);
+	modified.print();
+	
+	//count_consistent_subdag_tree()
+	//exit(0);
+
+	free_nodes_pathinfo(&pathinfo_dag);
+
+	delete (ParentInfo *)priv.dptr;
+	priv.dptr = 0;
+	pathinfo_dag.setPrivData(priv);
+
+	return 0;
+}
+
+
 void free_dag(DAG *g)
 {
 	delete g;
@@ -1799,6 +1851,8 @@ int main(int argc, char *argv[])
 
 	g->print();
 	//g->print(988);
+
+	reduce_dag(g);
 
 	list<DAG> subdags;
 	if (g->getVertexNum() <= 35)
