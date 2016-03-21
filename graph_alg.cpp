@@ -1349,7 +1349,7 @@ void update_info_after_cut(DAG *g, const IdList &old_mpnodes)
  * count_consistent_subdag_by_combining_indep_mpnodes
  *
  * @desc similar to above function, but rather than save all possible paths
- * to a list, calculate the number of consistent sub-DAG's with the
+ * to a list, calculate the number of consistent sub-DAGs with the
  * fixed path when each path is finished. Then sum them up.
  * This way we can reduce the space complexity.
  *
@@ -1515,8 +1515,7 @@ double count_consistent_subdag_adding_subdag(DAG *g, IdList mpnodes, const DAG &
 }
 
 
-// g(u), calculate the number of consistent sub-DAG's in a DAG g
-// independent subdag can have only one root
+// g(u), calculate the number of consistent sub-DAGs in a DAG g
 double count_consistent_subdag_for_independent_subdag(DAG *g)
 {
 	IdList mpnodes;
@@ -1618,7 +1617,7 @@ double count_consistent_subdag_for_independent_subdag(DAG *g)
 }
 
 
-// g(u), calculate the number of consistent sub-DAG's in a DAG g
+// g(u), calculate the number of consistent sub-DAGs in a DAG g
 // but first try to decompose the DAG into several independent parts,
 // such that we may reduce the number of independent MP vertices.
 double count_consistent_subdag(DAG *g, int rootid)
@@ -1813,11 +1812,32 @@ int reduce_dag(DAG *g)
 
 	// remove this path, then what's left should be all trees
 	modified.removeSubdag(pathdag);
-	modified.print();
 	
-	//count_consistent_subdag_tree()
-	//exit(0);
+	count_consistent_subdag_tree(&modified);
 
+	roots.clear();
+	modified.getRootList(roots);
+	FOR_EACH_IN_CONTAINER(rootit, roots)
+	{
+		// remove sub tree in original dag
+		int srid = *rootit;
+		//g->removeSubdagRootAt(srid);
+		Vertex *v = g->findVertex(srid);
+		// remove children
+		IdList children;
+		v->getChildList(children);
+		FOR_EACH_IN_CONTAINER(chit, children)
+		{
+			DAG tempdag;
+			g->removeSubdagRootAt(*chit, tempdag);
+		}
+		// save count
+		v->setPrivData(modified.getPrivData(srid));
+	}
+
+	modified.print(print_privdata);
+	g->print(print_privdata);
+	//exit(0);
 	free_nodes_pathinfo(&pathinfo_dag);
 
 	delete (ParentInfo *)priv.dptr;
@@ -1851,9 +1871,6 @@ int main(int argc, char *argv[])
 
 	g->print();
 	//g->print(988);
-
-	reduce_dag(g);
-
 	list<DAG> subdags;
 	if (g->getVertexNum() <= 35)
 	{
@@ -1861,6 +1878,9 @@ int main(int argc, char *argv[])
 		ret = get_consistent_subdag(g, rootid, subdags);
 		//print_subdag_list(subdags);
 	}
+
+	reduce_dag(g);
+
 	double num;
 	//num = count_consistent_subdag_for_independent_subdag(g);
 	//printf("Num of consistent sub-DAG: %.0f\n", num);
