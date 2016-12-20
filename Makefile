@@ -1,4 +1,9 @@
 #CPPFLAGS+=-O3 -lstdc++
+ifeq ($(strip $(OPT)),)
+	#default value
+	OPT=-g
+endif
+
 CPPFLAGS+=$(OPT) -lstdc++
 
 all: graph_alg
