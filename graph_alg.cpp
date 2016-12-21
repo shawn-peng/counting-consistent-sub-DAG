@@ -822,7 +822,7 @@ int decompose_dag(DAG *g, const IdList mpnodes, list<DAG> &subdags)
 			continue;
 		}
 
-		printf("decomposing for node %07d.\n", id);
+		//printf("decomposing for node %07d.\n", id);
 
 		int rootid = 0;
 		int newrootid = id;
@@ -842,10 +842,10 @@ int decompose_dag(DAG *g, const IdList mpnodes, list<DAG> &subdags)
 					&pathinfo_dag, covered_mpnodes);
 			if (newrootid == -1)
 			{
-				printf("%07d depends on multiroots.\n", id);
+				//printf("%07d depends on multiroots.\n", id);
 				break;
 			}
-			printf("independent root %07d for node %07d.\n", newrootid, id);
+			//printf("independent root %07d for node %07d.\n", newrootid, id);
 
 			// get map of paths to all mpnodes, check consistency of
 			// subdag with root rootid
@@ -1044,7 +1044,7 @@ int remove_subdag_to_become_trees(DAG *g, int rootid, list<DAG> &subdags)
 	IdList fringe;
 
 	//g->print();
-	printf("Removing subdag with root: %07d...\n", rootid);
+	//printf("Removing subdag with root: %07d...\n", rootid);
 
 	ParentNumMap &parent_num_map = get_parent_info(g).parentNumMap;
 
@@ -1484,8 +1484,8 @@ double count_consistent_subdag_adding_subdag(DAG *g, IdList mpnodes, const DAG &
 	get_path_to_root(g, srid, pathdag);
 	//pathdag.setRoot(rootid);
 	//printf("--------------------------------------------\n");
-	printf("Fixed path to root of node: %07d\n", srid);
-	pathdag.print();
+	//printf("Fixed path to root of node: %07d\n", srid);
+	//pathdag.print();
 
 	double total = 0;
 	IdList indep_mpnodes;
@@ -1502,7 +1502,7 @@ double count_consistent_subdag_adding_subdag(DAG *g, IdList mpnodes, const DAG &
 	}
 
 	//printf("%d independent MP nodes to combine.\n", indep_mpnodes.size());
-	printf("%d independent MP nodes in dag now.\n", indep_mpnodes.size());
+	//printf("%d independent MP nodes in dag now.\n", indep_mpnodes.size());
 
 	// calculate the number of possibilities
 	//IdList exclude;
@@ -1518,13 +1518,16 @@ double count_consistent_subdag_adding_subdag(DAG *g, IdList mpnodes, const DAG &
 // g(u), calculate the number of consistent sub-DAGs in a DAG g
 double count_consistent_subdag_for_independent_subdag(DAG *g)
 {
+	static int recursion_depth = 0;
+	recursion_depth++;
+
 	IdList mpnodes;
 	IdList roots;
 	g->getRootList(roots);
-	if (roots.size() > 1)
-	{
-		printf("the independent subdag have more than one root.\n");
-	}
+	//if (roots.size() > 1)
+	//{
+	//	printf("the independent subdag have more than one root.\n");
+	//}
 //	int rootid = g->getRoot();
 	list<DAG> extend_subdags;
 
@@ -1583,7 +1586,7 @@ double count_consistent_subdag_for_independent_subdag(DAG *g)
 			continue;
 		}
 
-		printf("Adding subdag %07d...\n", srid);
+		//printf("Adding subdag %07d...\n", srid);
 
 		// add it to current DAG and update
 
@@ -1597,12 +1600,15 @@ double count_consistent_subdag_for_independent_subdag(DAG *g)
 		//modified.print();
 
 		double num = count_consistent_subdag_adding_subdag(&modified, mpnodes, subdag);
-		printf("num for adding subdag %07d: %.0f\n", srid, num);
+		//printf("num for adding subdag %07d: %.0f\n", srid, num);
 		total += num;
 
 		extend_subdags.pop_front();
 
-		printf("%d MP trees left.\n", extend_subdags.size());
+		if (recursion_depth <= 2)
+		{
+			printf("[%d] %d MP trees left.\n", recursion_depth, extend_subdags.size());
+		}
 	}
 
 //	printf("num for node %07d: %.0f.\n", rootid, total);
@@ -1613,6 +1619,7 @@ double count_consistent_subdag_for_independent_subdag(DAG *g)
 	//print_id_list(roots);
 	//printf("): %.0f.\n", total);
 
+	recursion_depth--;
 	return total;
 }
 
@@ -1835,8 +1842,8 @@ int reduce_dag(DAG *g)
 		v->setPrivData(modified.getPrivData(srid));
 	}
 
-	modified.print(print_privdata);
-	g->print(print_privdata);
+	//modified.print(print_privdata);
+	//g->print(print_privdata);
 	//exit(0);
 	free_nodes_pathinfo(&pathinfo_dag);
 
@@ -1880,6 +1887,10 @@ int main(int argc, char *argv[])
 	}
 
 	reduce_dag(g);
+
+	//g->printEdges();
+
+	//return 0;
 
 	double num;
 	//num = count_consistent_subdag_for_independent_subdag(g);
