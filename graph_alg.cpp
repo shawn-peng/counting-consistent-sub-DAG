@@ -48,6 +48,8 @@ struct PathNode
 
 
 static unordered_map<string, double> hash_table;
+static int hash_tries = 0;
+static int hash_hits = 0;
 
 
 DAG *create_dag_from_matfile(const char *filename)
@@ -1635,8 +1637,10 @@ double count_consistent_subdag(DAG *g, int rootid)
 	string vs;
 	g->getVertexString(vs);
 	auto pos = hash_table.find(vs);
+	hash_tries++;
 	if (pos != hash_table.end())
 	{
+		hash_hits++;
 		return pos->second;
 	}
 
@@ -1914,6 +1918,9 @@ int main(int argc, char *argv[])
 	printf("Num of consistent sub-DAG: %.0f\n", num);
 
 	printf("(Sanity check)Num of consistent sub-DAG: %d\n", subdags.size());
+
+	printf("Hash tries: %d.\nHash hits: %d\nHit rates: %f\n",
+			hash_tries, hash_hits, (double)hash_hits/hash_tries);
 	free_dag(g);
 	return 0;
 }
