@@ -10,6 +10,7 @@
 #include <map>
 #include <algorithm>
 #include <string>
+#include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -261,7 +262,7 @@ int DAG::transplantAsChildOf(const IdList &parents, DAG &other)
 
 Vertex *DAG::findVertex(int id) const
 {
-	typeof(vindex.begin()) vi = vindex.find(id);
+	auto vi = vindex.find(id);
 	if (vi != vindex.end())
 	{
 		return &*(vi->second);
@@ -284,6 +285,17 @@ int DAG::getVertexList(IdList &list) const
 	{
 		list.push_back(iter->first);
 	}
+	return 0;
+}
+
+int DAG::getVertexString(string &str) const
+{
+	ostringstream oss;
+	FOR_EACH_IN_CONTAINER(iter, vindex)
+	{
+		oss << iter->first << ' ';
+	}
+	str = string(move(oss.str()));
 	return 0;
 }
 
@@ -346,8 +358,7 @@ int DAG::getRoot() const
 
 void DAG::addToRootList(int id)
 {
-	//DECLARE_ITERATER(pos, roots);
-	//pos = find(roots.begin(), roots.end(), id);
+	//auto pos = find(roots.begin(), roots.end(), id);
 	//if (pos != roots.end())
 	//{
 	//	return;
@@ -363,8 +374,7 @@ void DAG::addToRootList(int id)
 
 void DAG::removeFromRootList(int id)
 {
-	DECLARE_ITERATER(pos, roots);
-	pos = find(roots.begin(), roots.end(), id);
+	auto pos = find(roots.begin(), roots.end(), id);
 	if (pos == roots.end())
 	{
 		printf("%07d is not a root.\n", id);
@@ -383,8 +393,7 @@ void DAG::getRootList(IdList &list) const
 
 bool DAG::isRoot(int id) const
 {
-	DECLARE_ITERATER(pos, roots);
-	pos = find(roots.begin(), roots.end(), id);
+	auto pos = find(roots.begin(), roots.end(), id);
 	return pos != roots.end();
 }
 

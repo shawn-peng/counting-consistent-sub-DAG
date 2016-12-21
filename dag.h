@@ -117,6 +117,7 @@ public:
 	bool checkVertex(int id) const;
 
 	int getVertexList(IdList &list) const;
+	int getVertexString(string &str) const;
 
 	int getChildList(int id, IdList &list) const;
 
