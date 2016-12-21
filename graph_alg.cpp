@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <queue>
+#include <unordered_map>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -44,6 +45,9 @@ struct PathNode
 	int depth;
 	Vertex *v;
 };
+
+
+static unordered_map<string, double> hash_table;
 
 
 DAG *create_dag_from_matfile(const char *filename)
@@ -267,7 +271,7 @@ int get_parents(DAG *g, int id, IdList &plist)
 {
 	ParentMap &parent_map = get_parent_info(g).parentMap;
 
-	typeof(parent_map.begin()) map_it = parent_map.find(id);
+	auto map_it = parent_map.find(id);
 	if (map_it != parent_map.end())
 	{
 		plist.insert(plist.end(), map_it->second.begin(), map_it->second.end());
@@ -535,8 +539,7 @@ int get_path_to_root_with_exclusion(DAG *g, int id,
 		}
 
 		// check if this node must be excluded
-		DECLARE_ITERATER(excit, exclude);
-		excit = find(exclude.begin(), exclude.end(), pid);
+		auto excit = find(exclude.begin(), exclude.end(), pid);
 		if (excit != exclude.end())
 		{
 			// then we need to stop the process
@@ -1629,6 +1632,14 @@ double count_consistent_subdag_for_independent_subdag(DAG *g)
 // such that we may reduce the number of independent MP vertices.
 double count_consistent_subdag(DAG *g, int rootid)
 {
+	string vs;
+	g->getVertexString(vs);
+	auto pos = hash_table.find(vs);
+	if (pos != hash_table.end())
+	{
+		return pos->second;
+	}
+
 	DAG modified(*g);
 //	modified.copyVertexPrivData(*g);
 
@@ -1701,6 +1712,8 @@ double count_consistent_subdag(DAG *g, int rootid)
 	delete parentInfo;
 	privdata.dptr = NULL;
 	modified.setPrivData(privdata);
+
+	hash_table[vs] = total;
 
 	return total;
 }
