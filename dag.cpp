@@ -279,6 +279,11 @@ bool DAG::checkVertex(int id) const
 	return v != NULL;
 }
 
+int DAG::getVertexNum() const
+{
+	return vertices.size();
+}
+
 int DAG::getVertexList(IdList &list) const
 {
 	FOR_EACH_IN_CONTAINER(iter, vindex)
@@ -356,6 +361,7 @@ int DAG::getRoot() const
 	return roots.front();
 }
 
+// assume the roots list is very small, we use a sort insert
 void DAG::addToRootList(int id)
 {
 	//auto pos = find(roots.begin(), roots.end(), id);
@@ -368,6 +374,15 @@ void DAG::addToRootList(int id)
 		return;
 	}
 
+	//roots.push_back(id);
+	FOR_EACH_IN_CONTAINER(iter, roots)
+	{
+		if (id < *iter)
+		{
+			roots.insert(iter, id);
+			return;
+		}
+	}
 	roots.push_back(id);
 	return;
 }
@@ -397,10 +412,20 @@ bool DAG::isRoot(int id) const
 	return pos != roots.end();
 }
 
-int DAG::getVertexNum() const
+int DAG::generateRoots()
 {
-	return vertices.size();
+	int cnt = 0;
+	FOR_EACH_IN_CONTAINER(iter, vindex)
+	{
+		if (iter->second->getParentNum() == 0)
+		{
+			addToRootList(iter->first);
+			cnt++;
+		}
+	}
+	return cnt;
 }
+
 
 void DAG::setPrivData(PrivDataUnion data)
 {
@@ -604,6 +629,7 @@ void DAG::printVertexes(PrivDataFn fn) const
 		FOR_EACH_IN_CONTAINER(iter, vindex)
 		{
 			iter->second->printId();
+			printf(", ");
 		}
 	}
 	else
@@ -611,9 +637,12 @@ void DAG::printVertexes(PrivDataFn fn) const
 		FOR_EACH_IN_CONTAINER(iter, vindex)
 		{
 			iter->second->printId();
+			printf("[");
 			fn(iter->second->getPrivData());
+			printf("], ");
 		}
 	}
+	printf("\n");
 	return;
 }
 
@@ -720,11 +749,11 @@ int DAG::removeEdge(int idstart, int idend)
 int DAG::removeSubdagRootAt(int rootid, DAG &subdag)
 {
 	//check all children not have multiple parents
-	if (!isSubdagTree(rootid))
-	{
-		assert(0);
-		return 1;
-	}
+	//if (!isSubdagTree(rootid))
+	//{
+	//	assert(0);
+	//	return 1;
+	//}
 
 	IdList parents;
 
@@ -743,7 +772,17 @@ int DAG::removeSubdagRootAt(int rootid, DAG &subdag)
 
 	transferSubdag(*this, subdag, rootid);
 	removeFromRootList(rootid);// this node must have become root when we remove edges
-	subdag.setRoot(rootid);
+	subdag.addToRootList(rootid);
+
+	return 0;
+}
+
+int DAG::removeSubdagRootAt(const IdList &subroots, DAG &subdag)
+{
+	FOR_EACH_IN_CONTAINER(iter, subroots)
+	{
+		removeSubdagRootAt(*iter, subdag);
+	}
 
 	return 0;
 }
@@ -806,6 +845,8 @@ int DAG::transferSubdag(DAG &src, DAG &dst, int id)
 	VertexMapIter miter = src.vindex.find(id);
 	if (miter == src.vindex.end())
 	{
+		// already moved (maybe check its presence in the dst)
+		assert(dst.checkVertex(id));
 		return 1;
 	}
 	VertexIter pos = miter->second;

@@ -116,6 +116,7 @@ public:
 	Vertex *findVertex(int id) const;
 	bool checkVertex(int id) const;
 
+	int getVertexNumber() const;
 	int getVertexList(IdList &list) const;
 	int getVertexString(string &str) const;
 
@@ -131,6 +132,7 @@ public:
 	void removeFromRootList(int id);
 	void getRootList(IdList &list) const;
 	bool isRoot(int id) const;
+	int generateRoots();
 
 	int getVertexNum() const;
 
@@ -151,6 +153,8 @@ public:
 	// remove the subdag with root whose id is rootid
 	// the subdag must be a tree
 	int removeSubdagRootAt(int rootid, DAG &subdag);
+	// remove the subdag with given roots
+	int removeSubdagRootAt(const IdList &roots, DAG &subdag);
 
 	// remove the exact subdag
 	int removeSubdag(const DAG &subdag);
