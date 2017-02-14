@@ -499,21 +499,21 @@ int get_mpnodes(DAG *g, IdList &mpnodes)
 
 int get_signature(DAG *g, string &str)
 {
-	ostringstream oss;
-	IdList roots;
-	g->getRootList(roots);
-	FOR_EACH_IN_CONTAINER(iter, roots)
-	{
-		oss << *iter << ' ';
-	}
-	IdList mpnodes;
-	get_mpnodes(g, mpnodes);
-	FOR_EACH_IN_CONTAINER(iter, mpnodes)
-	{
-		oss << *iter << ' ';
-	}
-	str = string(move(oss.str()));
-	//g->getVertexString(str);
+	//ostringstream oss;
+	//IdList roots;
+	//g->getRootList(roots);
+	//FOR_EACH_IN_CONTAINER(iter, roots)
+	//{
+	//	oss << *iter << ' ';
+	//}
+	//IdList mpnodes;
+	//get_mpnodes(g, mpnodes);
+	//FOR_EACH_IN_CONTAINER(iter, mpnodes)
+	//{
+	//	oss << *iter << ' ';
+	//}
+	//str = string(move(oss.str()));
+	g->getVertexString(str);
 	return 0;
 }
 
@@ -1750,6 +1750,7 @@ double count_consistent_subdag_for_independent_subdag(DAG *g)
 		get_parents(g, srid, parents);
 		//modified.addDAGAsChildOf(parents, subdag);
 		modified.transplantAsChildOf(parents, subdag);
+		// each subdag added only has one mpnode
 		mpnodes.push_back(srid);
 
 		//printf("Updated: \n");
