@@ -1596,8 +1596,8 @@ double count_consistent_subdag_by_cutting_fixed_path(DAG *g, int fixed, const DA
 	// Check there is something left
 	if (rootlist.size() != 0)
 	{
-		//printf("DAG after fixed path cutted.\n");
-		//modified.print(print_privdata);
+		printf("DAG after fixed path cutted.\n");
+		modified.print(print_privdata);
 		total += count_consistent_subdag(&modified, rootlist);
 	}
 	else
@@ -1670,6 +1670,7 @@ double count_consistent_subdag_for_independent_subdag(DAG *g)
 	{
 		hash_hits++;
 		//printf("Hash hit! (%d)\n", hash_hits);
+		printf("Hashed count (%f)\n", pos->second);
 		return pos->second;
 	}
 
@@ -1741,7 +1742,7 @@ double count_consistent_subdag_for_independent_subdag(DAG *g)
 			continue;
 		}
 
-		//printf("Adding subdag %07d...\n", srid);
+		printf("Adding subdag %07d...\n", srid);
 
 		// add it to current DAG and update
 
@@ -1806,6 +1807,7 @@ double count_consistent_subdag(DAG *g, int rootid)
 	if (pos != hash_table.end())
 	{
 		hash_hits++;
+		printf("Hashed count (%f)\n", pos->second);
 		return pos->second;
 	}
 
@@ -1844,6 +1846,7 @@ double count_consistent_subdag(DAG *g, int rootid)
 
 		//double num = count_consistent_subdag_for_independent_subdag(subdag);
 		double num = count_consistent_subdag(subdag, srid);
+		printf("count is %f\n", num);
 
 		// add to original dag
 
@@ -1853,14 +1856,28 @@ double count_consistent_subdag(DAG *g, int rootid)
 		// with count_consistent_subdag_for_independent_subdag
 		// function, the mpnodes from this subdag won't be considered.
 		modified.addVertex(srid);
-		modified.addEdge(parent, srid);
 		PrivDataUnion priv;
 		priv.ddouble = num;
 		modified.setPrivData(srid, priv);
+
+		// we should check if there is a parent for this root of subdag
+		if (!g->isRoot(srid))
+		{
+			// if there is any parent, there should be only one
+			// because that's the way we define independent subdag
+			int parent;
+			parent = parent_map[srid].front();
+			modified.addEdge(parent, srid);
+		}
+		else
+		{
+			// otherwise, add to the root list
+			modified.addToRootList(srid);
+		}
 	}
 
-	//printf("After regenerate.\n");
-	//modified.print(print_privdata);
+	printf("After regenerate.\n");
+	modified.print(print_privdata);
 
 
 	// get combination
@@ -1902,6 +1919,7 @@ double count_consistent_subdag(DAG *g, const IdList &rootlist)
 	{
 		hash_hits++;
 		//printf("Hash hit! (%d)\n", hash_hits);
+		printf("Hashed count (%f)\n", pos->second);
 		return pos->second;
 	}
 
@@ -1913,9 +1931,9 @@ double count_consistent_subdag(DAG *g, const IdList &rootlist)
 
 	decompose_dag(&modified, mpnodes, decomp_subdags);
 
-	//printf("decomposed subdags.\n");
-	//modified.print();
-	//print_subdag_list(decomp_subdags);
+	printf("decomposed subdags.\n");
+	modified.print();
+	print_subdag_list(decomp_subdags);
 
 	ParentMap &parent_map = get_parent_info(&modified).parentMap;
 
@@ -1933,6 +1951,7 @@ double count_consistent_subdag(DAG *g, const IdList &rootlist)
 
 		//double num = count_consistent_subdag_for_independent_subdag(subdag);
 		double num = count_consistent_subdag(subdag, subroots);
+		printf("count is %f\n", num);
 
 		// add to original dag
 
@@ -1949,7 +1968,7 @@ double count_consistent_subdag(DAG *g, const IdList &rootlist)
 		modified.setPrivData(srid, priv);
 
 		// we should check if there is a parent for this root of subdag
-		if (subroots.size() == 1 && !modified.isRoot(srid))
+		if (subroots.size() == 1 && !g->isRoot(srid))
 		{
 			// if there is any parent, there should be only one
 			// because that's the way we define independent subdag
@@ -1957,14 +1976,20 @@ double count_consistent_subdag(DAG *g, const IdList &rootlist)
 			parent = parent_map[srid].front();
 			modified.addEdge(parent, srid);
 		}
+		else
+		{
+			// otherwise, add to the root list
+			modified.addToRootList(srid);
+		}
 	}
 
-	//printf("After regenerate.\n");
-	//modified.print(print_privdata);
+	printf("After regenerate.\n");
+	modified.print(print_privdata);
 
 
 	// get combination
 	double total = count_consistent_subdag_for_independent_subdag(&modified);
+	printf("the total is %f\n", total);
 	//modified.print(print_privdata);
 
 
