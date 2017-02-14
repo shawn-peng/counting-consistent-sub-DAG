@@ -33,3 +33,10 @@ log*
 .project
 .settings
 
+# LaTeX
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.pdf
+*.bak

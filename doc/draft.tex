@@ -1,0 +1,148 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath,amsthm,amssymb}
+\usepackage[top=1in,bottom=1in,left=1.25in,right=1.25in]{geometry}
+\usepackage[linesnumbered,lined,boxed,commentsnumbered,longend]{algorithm2e}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+
+\newcommand{\subg}[2]{\ensuremath{{#1}[#2]}}
+\newcommand{\colg}[2]{\ensuremath{{#1}^{\left(#2\right)}}}
+\newcommand{\ance}[1]{\ensuremath{\mathcal{A}_{#1}}}
+\newcommand{\desc}[1]{\ensuremath{\mathcal{D}_{#1}}}
+
+\title{On the consistent sub-DAG counting problem}
+\author{Yuxiang Jiang}
+\date{\today}
+\begin{document}
+\maketitle
+\section{Notation}
+    \begin{table}[htp!]
+        \renewcommand\arraystretch{1.5}
+        \begin{tabular}{c|l}
+            \hline\hline
+            Notation & Meaning \\ \hline
+            $G = (V, E)$ & A directed graph $G$ made up of a vertex set $V$ and an edge set $E$.\\
+            $\mathcal{G}$ & A set of directed graphs.\\
+            $u$, $v$, \textit{etc.} & Vertices in a graph.\\
+            $(u, v)$ & An ordered pair which denotes a directed edge $u \to v$ in the set $E$.\\
+            $\subg{G}{S}$ & A vertex-induced sub-graph of $G$, where $S \subseteq V$.\\
+            $\subg{G}{-S}$ & A sub-graph of $G$ induced by vertices that are not in $S$.\\
+            $\colg{G}{S}$ & A derived graph from $G$ by collapsing vertices in $S$ into a virtual vertex.\\
+            $\tilde{v}$ & A collapsed virtual vertex.\\
+            $\ance{S}$ & The union of $S$ and all ancestors of $u \in S$ in $G$.\\
+            $\desc{S}$ & The union of $S$ and all descendants of $u \in S$ in $G$.\\
+            $\ance{u_i}, \desc{u_i}$ & Shorthand notations for $\ance{\{u_i\}}$
+            and $\desc{\{u_i\}}$.\\
+            \hline
+        \end{tabular}
+    \end{table}
+
+\section{The consistent sub-DAG counting problem}
+    In this problem, we are given a \emph{directed acyclic graph}~(DAG)
+    $G=(V,E)$, which potentially can have more than roots (\textit{i.e.}
+    vertices with no incoming edges) and disconnected. We are then interested in
+    a particular type of vertex-induced sub-graphs $\subg{G}{S}$ which we call
+    \emph{consistent sub-DAG}, and would like to know the number of all such
+    sub-DAGs.  \begin{definition} A sub-graph $\subg{G}{S}$ is called
+        \emph{consistent} \textit{iff} $\forall v \in S$, $(u, v) \in E \implies
+        u \in S$.  \end{definition} To precisely compute the size of the
+    collection $\mathcal{G} = \left\{\subg{G}{S} \mid \subg{G}{S} \mbox{ is
+            consistent}\right\}$, we define a sub-routine $f$ which takes two
+    inputs: (i) a DAG $G$ and (ii) a subset $S$ of its vertices and returns the
+    number of consistent sub-DAGs each of which contains $S$. For example,
+    \dots. Therefore, the original problem reduces to compute $f(G,
+    \varnothing)$.
+
+\section{Algorithm}
+    The algorithm works in an induction manner, which can be described in the
+    following recursive function. We start from an empty graph $\varnothing$
+    (aka.  $G_0$) and keep adding vertices one at a time (with its incoming
+    edges) in a topological order. Let $u_1, u_2, \ldots, u_n \in V$ be a sorted
+    order, and we use $G_i = (V_i, E_i), i = 1, \ldots, n$ to denote the
+    transient graph after adding back $u_i$. And during this reconstruction
+    process, we keep track of those counts $f(G_i, \varnothing)$ on-the-fly to
+    get $f(G_n, \varnothing)$ in the end as the result. Note that the subscript
+    $i$ of $G_i$ coincides with the size of the graph.
+
+    \SetKwFunction{CCSD}{Count-cDAG}
+    \begin{algorithm}[htp!]
+        \SetKwProg{Fn}{Function}{}{end}
+        \Fn(\tcc*[h]{equivalent to compute $f(G, \varnothing)$}){\CCSD{$G$}}{
+            \If{$G=\varnothing$}{
+                \KwRet 1\;\label{algo:trivial}
+            }
+            Topologically sort vertices in $V$ to get an order: $u_1, u_2, \ldots,
+            u_n$\;
+            $f(G_0, \varnothing) \leftarrow 1$\;
+            \For{$i \leftarrow 1$ \KwTo $n$}{
+                \uIf{$u_i$ has no parent}{
+                    $f(G_i, \varnothing) = 2 \times f(G_{i-1},
+                    \varnothing)$\;\label{algo:case0}
+                }
+                \Else{
+                    $f(G_i, \varnothing) = \CCSD{$\colg{G_i}{\ance{u_i}}$}
+                    - \CCSD{$\subg{G_i}{-\desc{\ance{u_i}}}$}
+                    + f(G_{i-1}, \varnothing)
+                    $\;\label{algo:case1}
+                }
+            }
+            \KwRet $f(G_n, \varnothing)$\;
+        }
+        \caption{Count the number of consistent sub-DAGs of a graph.}
+    \end{algorithm}
+
+    First, we define $f(\varnothing, \varnothing)$ to be $1$ for the
+    \emph{trivial} empty graph (Line~\ref{algo:trivial}) as we consider an empty
+    graph is a consistent sub-DAG of any graph. Line~\ref{algo:case0} handles
+    the case where $u_i$ is a root vertex, which turns out to be a singleton in
+    $G_i$. Therefore, the numer of cDAGs of the current graph $G_i$ is twice as
+    many as that of $G_{i-1}$, since $u_i$ is independent of the rest.
+
+    The most involved part of this algorithm is Line~\ref{algo:case1}, which
+    handles the cases where $u_i$ has at least one parent vertices. All cDAGs of
+    $G_i$ can be divided into two non-overlapping groups: one includes $u_i$ and
+    the other excludes $u_i$. The latter is indeed $f(G_{i-1}, \varnothing)$
+    which has been already computed; while the former, $f(G_i, \{u_i\})$, is
+    equivalent to $f(G_i, \ance{u_i})$, since all vertices in $\ance{u_i}$ have
+    to be included given the inclusion of $u_i$ due to consistency. We can
+    ``collapse'' $\ance{u_i}$ to be a single ``virtual'' vertex (denoted as
+    $\tilde{v}$), and notice that there is no incoming edges for this vertex in
+    the collapsed graph. In other words, $\tilde{v}$ is the root (or at least
+    one of the roots) of $\colg{G_i}{\ance{u_i}}$. Now, to compute
+    $f(\colg{G_i}{\ance{u_i}}, \{\tilde{v}\})$, we can recursively call the
+    function \CCSD on graph $\colg{G_i}{\ance{u_i}}$ and
+    $\subg{G_i}{-\desc{\ance{u_i}}}$ respectively, and subtract the result of
+    one from the other. Recall that \CCSD{$\colg{G_i}{\ance{u_i}}$} gives the
+    number of cDAGs including those without selecting $\tilde{v}$.
+    These extra counts are given by \CCSD{$\subg{G_i}{-\desc{\ance{u_i}}}$},
+    since these sub-DAGs are the only ones that contribute to valid counts in
+    $\colg{G_i}{\ance{u_i}}$ without selecting $\tilde{v}$. Note that, in the
+    case of single-root DAGs, this term can be simplified as
+    \begin{align*}
+        \CCSD{$\subg{G_i}{-\desc{\ance{u_i}}}$} = \CCSD{$\varnothing$} = 1.
+    \end{align*}
+
+    That is for the number of consistent sub-DAGs in $G_i$ that contains $u_i$, we have
+    \begin{align*}
+        f(G_i, \{u_i\}) &= f(G_i, \ance{u_i})\\
+        &= f(\colg{G_i}{\ance{u_i}}, \varnothing) -
+           f(\subg{G_i}{-\desc{\ance{u_i}}}, \varnothing)\\
+        &= \CCSD{$\colg{G_i}{\ance{u_i}}$} -
+           \CCSD{$\subg{G_i}{-\desc{\ance{u_i}}}$}.
+    \end{align*}
+
+    Finally, because both $\left|V_i \bigcap \ance{u_i}\right|$ and $\left|V_i
+    \bigcap \desc{\ance{u_i}}\right|$ are at least 2, we have the size of
+    these two sub-problems:
+    \begin{align*}
+        \left|\colg{G_i}{\ance{u_i}}\right| = \left|\subg{G_{i}}{-\ance{u_i}}\right| + 1 &\leq i - 1
+        \quad\mbox{and}\\
+        \left|\subg{G_i}{-\desc{\ance{u_i}}}\right| &< i-1,
+    \end{align*}
+    which guarantees that the algorithm stops in a finite number of recursive calls.
+
+\section{Analysis}
+    TBA.
+
+\end{document}
