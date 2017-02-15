@@ -1596,8 +1596,8 @@ double count_consistent_subdag_by_cutting_fixed_path(DAG *g, int fixed, const DA
 	// Check there is something left
 	if (rootlist.size() != 0)
 	{
-		printf("DAG after fixed path cutted.\n");
-		modified.print(print_privdata);
+		//printf("DAG after fixed path cutted.\n");
+		//modified.print(print_privdata);
 		total += count_consistent_subdag(&modified, rootlist);
 	}
 	else
@@ -1670,7 +1670,7 @@ double count_consistent_subdag_for_independent_subdag(DAG *g)
 	{
 		hash_hits++;
 		//printf("Hash hit! (%d)\n", hash_hits);
-		printf("Hashed count (%f)\n", pos->second);
+		//printf("Hashed count (%f)\n", pos->second);
 		return pos->second;
 	}
 
@@ -1738,11 +1738,11 @@ double count_consistent_subdag_for_independent_subdag(DAG *g)
 			// move to the end of list
 			extend_subdags.splice(extend_subdags.end(),
 					extend_subdags, extend_subdags.begin());
-			printf("subdag %07d is moved to the end.\n", srid);
+			//printf("subdag %07d is moved to the end.\n", srid);
 			continue;
 		}
 
-		printf("Adding subdag %07d...\n", srid);
+		//printf("Adding subdag %07d...\n", srid);
 
 		// add it to current DAG and update
 
@@ -1808,7 +1808,7 @@ double count_consistent_subdag(DAG *g, int rootid)
 	if (pos != hash_table.end())
 	{
 		hash_hits++;
-		printf("Hashed count (%f)\n", pos->second);
+		//printf("Hashed count (%f)\n", pos->second);
 		return pos->second;
 	}
 
@@ -1877,8 +1877,8 @@ double count_consistent_subdag(DAG *g, int rootid)
 		}
 	}
 
-	printf("After regenerate.\n");
-	modified.print(print_privdata);
+	//printf("After regenerate.\n");
+	//modified.print(print_privdata);
 
 
 	// get combination
@@ -1920,7 +1920,7 @@ double count_consistent_subdag(DAG *g, const IdList &rootlist)
 	{
 		hash_hits++;
 		//printf("Hash hit! (%d)\n", hash_hits);
-		printf("Hashed count (%f)\n", pos->second);
+		//printf("Hashed count (%f)\n", pos->second);
 		return pos->second;
 	}
 
@@ -1932,9 +1932,9 @@ double count_consistent_subdag(DAG *g, const IdList &rootlist)
 
 	decompose_dag(&modified, mpnodes, decomp_subdags);
 
-	printf("decomposed subdags.\n");
-	modified.print();
-	print_subdag_list(decomp_subdags);
+	//printf("decomposed subdags.\n");
+	//modified.print();
+	//print_subdag_list(decomp_subdags);
 
 	ParentMap &parent_map = get_parent_info(&modified).parentMap;
 
@@ -1952,7 +1952,7 @@ double count_consistent_subdag(DAG *g, const IdList &rootlist)
 
 		//double num = count_consistent_subdag_for_independent_subdag(subdag);
 		double num = count_consistent_subdag(subdag, subroots);
-		printf("count is %f\n", num);
+		//printf("count is %f\n", num);
 
 		// add to original dag
 
@@ -1984,13 +1984,13 @@ double count_consistent_subdag(DAG *g, const IdList &rootlist)
 		}
 	}
 
-	printf("After regenerate.\n");
-	modified.print(print_privdata);
+	//printf("After regenerate.\n");
+	//modified.print(print_privdata);
 
 
 	// get combination
 	double total = count_consistent_subdag_for_independent_subdag(&modified);
-	printf("the total is %f\n", total);
+	//printf("the total is %f\n", total);
 	//modified.print(print_privdata);
 
 
