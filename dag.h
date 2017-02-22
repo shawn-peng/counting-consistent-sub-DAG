@@ -9,6 +9,7 @@
 #ifndef __DAG_H_
 #define __DAG_H_
 
+#include <string>
 #include <vector>
 #include <list>
 #include <map>

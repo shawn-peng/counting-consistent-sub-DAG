@@ -4,7 +4,7 @@ ifeq ($(strip $(OPT)),)
 	OPT=-g
 endif
 
-CPPFLAGS+=$(OPT) -std=c++11 -lstdc++
+CPPFLAGS+=$(OPT) -std=c++0x -lstdc++
 
 all: graph_alg
 
