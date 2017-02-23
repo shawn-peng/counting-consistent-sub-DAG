@@ -16,6 +16,7 @@
 #include <assert.h>
 #include <string.h>
 #include <sstream>
+#include <memory>
 
 using namespace NS_DAG;
 
@@ -204,7 +205,7 @@ void print_subdag_list(const list<DAG> &glist)
 	}
 }
 
-void print_subdag_list(const list<DAG> &glist, PrivDataFn fn)
+void print_subdag_list(const list<DAG> &glist, ConstPrivDataFn fn)
 {
 	FOR_EACH_IN_CONTAINER(lsit, glist)
 	{
@@ -230,29 +231,30 @@ void print_id_list(const IdList &list)
 	return;
 }
 
-int print_privdata(PrivDataUnion data)
+int print_privdata(PrivDataUnion *data)
 {
-	return printf("%.0f", data.ddouble);
+	return printf("%.0f", data->ddouble);
 }
 
-int print_privdata_int(PrivDataUnion data)
+int print_privdata_int(PrivDataUnion *data)
 {
-	return printf("%d", data.dint);
+	return printf("%d", data->dint);
 }
 
-int print_privdata_num(PrivDataUnion data)
+int print_privdata_num(PrivDataUnion *data)
 {
-	//return printf("%.0f", data.ddouble);
+	//return printf("%.0f", data->ddouble);
 }
 
-int print_privdata_ptr(PrivDataUnion data)
+int print_privdata_ptr(PrivDataUnion *data)
 {
-	return printf("%p", data.dptr);
+	return printf("%p", data->dptr);
 }
 
-int print_privdata_pathinfo(PrivDataUnion data)
+int print_privdata_pathinfo(PrivDataUnion *data)
 {
-	PathInfo *pinfo = (PathInfo *)data.dptr;
+	//shared_ptr<PathInfo> pinfo = static_pointer_cast<PathInfo>(data->dptr);
+	shared_ptr<PathInfo> pinfo = static_pointer_cast<PathInfo>(data->dptr);
 	map<int, IdList> &pmap = pinfo->pathMap;
 	printf("{\n");
 	FOR_EACH_IN_CONTAINER(iter, pmap)
@@ -270,12 +272,14 @@ int print_privdata_pathinfo(PrivDataUnion data)
 
 number_t &getNumFromPrivData(PrivDataUnion &data)
 {
-	void *&p = data.dptr;
-	if (p == NULL)
+	shared_ptr<void> &p = data.dptr;
+	if (!p)
 	{
-		p = new number_t(0);
+		p = make_shared<number_t>(0);
+		data.type = DT_POINTER;
 	}
-	return *(number_t *)p;
+	void *vp = p.get();
+	return *(number_t *)vp;
 }
 
 void setNumToPrivData(PrivDataUnion &data, const number_t &num)
@@ -286,15 +290,31 @@ void setNumToPrivData(PrivDataUnion &data, const number_t &num)
 	//	delete p;
 	//}
 	//p = new number_t(num);
-	number_t *p = static_cast<number_t *>(data.dptr);
-	if (p == NULL)
+	//shared_ptr<number_t> &p = static_pointer_cast<number_t>(data.dptr);
+	//if (!p)
+	//{
+	//	p = make_shared<number_t>(0);
+	//	data.dptr = p;
+	//}
+	//*p = num;
+	shared_ptr<void> &p = data.dptr;
+	if (!p)
 	{
-		p = new number_t(0);
-		data.dptr = p;
+		p = make_shared<number_t>(0);
+		data.type = DT_POINTER;
 	}
-	*p = num;
+	shared_ptr<number_t> np = static_pointer_cast<number_t>(p);
+	*np = num;
 }
 
+template <typename T>
+int setPtrToPrivData(PrivDataUnion &data, T *p)
+{
+	assert(data.type == DT_EMPTY || data.type == DT_POINTER);
+	data.dptr = shared_ptr<void>(p);
+	data.type = DT_POINTER;
+	return 0;
+}
 
 //static map<int, int> parent_num_map;
 
@@ -302,7 +322,8 @@ void setNumToPrivData(PrivDataUnion &data, const number_t &num)
 
 ParentInfo &get_parent_info(DAG *g)
 {
-	return *(ParentInfo *)g->getPrivData().dptr;
+	ParentInfo *p = static_cast<ParentInfo *>(g->getPrivData().dptr.get());
+	return *p;
 }
 
 
@@ -429,7 +450,8 @@ int gen_parent_map(DAG *g, IdList parents)
 
 PathInfo *get_path_info(const PrivDataUnion &privdata)
 {
-	return (PathInfo *)privdata.dptr;
+	assert(privdata.type == DT_POINTER);
+	return (PathInfo *)privdata.dptr.get();
 }
 
 PathInfo *get_path_info(const Vertex *v)
@@ -471,13 +493,14 @@ int free_nodes_pathinfo(DAG *g)
 			continue;
 		}
 		PrivDataUnion privdata = v->getPrivData();
-		pinfo = (PathInfo *)privdata.dptr;
-		if (pinfo == NULL)
-		{
-			continue;
-		}
-		delete pinfo;
+		//pinfo = (PathInfo *)privdata.dptr;
+		//if (pinfo == NULL)
+		//{
+		//	continue;
+		//}
+		//delete pinfo;
 		privdata.dptr = NULL;
+		privdata.type = DT_EMPTY;
 		v->setPrivData(privdata);
 
 		IdList children;
@@ -685,7 +708,8 @@ int add_path_to_pathmap(DAG *g, int targetid, const DAG &pathdag)
 			continue;
 		}
 
-		PathInfo *pinfo = (PathInfo *)g->getPrivData(id).dptr; // path info is saved in g
+		//shared_ptr<PathInfo> pinfo = static_pointer_cast<PathInfo>(g->getPrivData(id).dptr); // path info is saved in g
+		PathInfo *pinfo = (PathInfo *)(g->getPrivData(id).dptr.get()); // path info is saved in g
 		assert(pinfo);
 		map<int, IdList> &pathmap = pinfo->pathMap;
 
@@ -725,7 +749,9 @@ int gen_mpnode_pathinfo(DAG *g, IdList mpnodes)
 		pinfo->depthParent = 0;
 
 		PrivDataUnion privdata;
-		privdata.dptr = (void *)pinfo;
+		privdata.dptr = shared_ptr<PathInfo>(pinfo);
+		privdata.type = DT_POINTER;
+		//setPtrToPrivData(privdata, pinfo);
 		g->setPrivData(rootid, privdata);
 
 		fringe.push_back(rootid);
@@ -739,7 +765,7 @@ int gen_mpnode_pathinfo(DAG *g, IdList mpnodes)
 
 		Vertex *v = g->findVertex(id);
 		assert(v);
-		pinfo = (PathInfo *)v->getPrivData().dptr;
+		pinfo = (PathInfo *)v->getPrivData().dptr.get();
 		assert(pinfo);
 		int depth = pinfo->depth;
 
@@ -753,12 +779,13 @@ int gen_mpnode_pathinfo(DAG *g, IdList mpnodes)
 			assert(vch);
 
 			PrivDataUnion chprivdata = vch->getPrivData();
-			pinfo = (PathInfo *)chprivdata.dptr;
-			if (pinfo == NULL)
+			pinfo = (PathInfo *)chprivdata.dptr.get();
+			if (!pinfo)
 			{
 				pinfo = new PathInfo();
 				PrivDataUnion pd;
-				pd.dptr = (void *)pinfo;
+				pd.dptr = shared_ptr<void>(pinfo);
+				pd.type = DT_POINTER;
 				vch->setPrivData(pd);
 			}
 			// check for the shallowest path
@@ -841,7 +868,7 @@ int add_node_to_pathnode_queue(list<PathNode> &pl, PathNode x)
 		{
 			//VertexDepthInfo node;
 			node.v = g->findVertex(*iter);
-			PathInfo *pinfo = (PathInfo *)node.v->getPrivData().dptr;
+			shared_ptr<PathInfo> pinfo = static_pointer_cast<PathInfo>(node.v->getPrivData().dptr);
 			node.depth = pinfo->depth;
 			add_node_to_pathnode_queue(paths_queue, node);
 			//printf("push depth %d: %07d\n", node.depth, node.v->getId());
@@ -897,7 +924,7 @@ int find_root_consistent_to_vertices(DAG *g, IdList nodes)
 		{
 			//VertexDepthInfo node;
 			node.v = g->findVertex(*iter);
-			PathInfo *pinfo = (PathInfo *)node.v->getPrivData().dptr;
+			shared_ptr<PathInfo> pinfo = static_pointer_cast<PathInfo>(node.v->getPrivData().dptr);
 			node.depth = pinfo->depth;
 			add_node_to_pathnode_queue(paths_queue, node);
 			//printf("push depth %d: %07d\n", node.depth, node.v->getId());
@@ -954,7 +981,7 @@ int find_roots_consistent_to_vertices(DAG *g, IdList nodes, IdList &roots)
 		{
 			//VertexDepthInfo node;
 			node.v = g->findVertex(*iter);
-			PathInfo *pinfo = (PathInfo *)node.v->getPrivData().dptr;
+			shared_ptr<PathInfo> pinfo = static_pointer_cast<PathInfo>(node.v->getPrivData().dptr);
 			node.depth = pinfo->depth;
 			add_node_to_pathnode_queue(paths_queue, node);
 			//printf("push depth %d: %07d\n", node.depth, node.v->getId());
@@ -1179,7 +1206,8 @@ int get_consistent_subdag(DAG *g, int rootid, list<DAG> &subdags)
 
 	ParentInfo *parentInfo = new ParentInfo();
 	PrivDataUnion privdata;
-	privdata.dptr = parentInfo;
+	privdata.dptr = shared_ptr<void>(parentInfo);
+	privdata.type = DT_POINTER;
 	g->setPrivData(privdata);
 
 	ret = gen_parent_num_map(g, rootid);
@@ -1204,8 +1232,9 @@ int get_consistent_subdag(DAG *g, int rootid, list<DAG> &subdags)
 
 	ret = enum_possibilities(g, g0, fringe, IdList(), subdags);
 
-	delete parentInfo;
+	//delete parentInfo;
 	privdata.dptr = NULL;
+	privdata.type = DT_EMPTY;
 	g->setPrivData(privdata);
 
 	return ret;
@@ -1643,7 +1672,8 @@ number_t count_consistent_subdag_by_cutting_fixed_path(DAG *g, int fixed, const 
 	// create parent info structure
 	ParentInfo *parentInfo = new ParentInfo();
 	PrivDataUnion privdata;
-	privdata.dptr = parentInfo;
+	privdata.dptr = shared_ptr<void>(parentInfo);
+	privdata.type = DT_POINTER;
 	modified.setPrivData(privdata);
 
 	// cut fixed path
@@ -1673,8 +1703,9 @@ number_t count_consistent_subdag_by_cutting_fixed_path(DAG *g, int fixed, const 
 		printf("Nothing left after cut, all nodes in the DAG needs to be fixed.\n");
 	}
 
-	delete parentInfo;
+	//delete parentInfo;
 	privdata.dptr = NULL;
+	privdata.type = DT_EMPTY;
 	modified.setPrivData(privdata);
 
 	return total;
@@ -1871,7 +1902,8 @@ number_t count_consistent_subdag(DAG *g, int rootid)
 
 	ParentInfo *parentInfo = new ParentInfo();
 	PrivDataUnion privdata;
-	privdata.dptr = parentInfo;
+	privdata.dptr = shared_ptr<void>(parentInfo);
+	privdata.type = DT_POINTER;
 	modified.setPrivData(privdata);
 
 	gen_parent_num_map(&modified, rootid);
@@ -1962,8 +1994,9 @@ number_t count_consistent_subdag(DAG *g, int rootid)
 	number_t total = count_consistent_subdag_for_independent_subdag(&modified);
 	//modified.print(print_privdata);
 
-	delete parentInfo;
+	//delete parentInfo;
 	privdata.dptr = NULL;
+	privdata.type = DT_EMPTY;
 	modified.setPrivData(privdata);
 
 	hash_table[vs] = total;
@@ -1984,7 +2017,8 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist)
 
 	ParentInfo *parentInfo = new ParentInfo();
 	PrivDataUnion privdata;
-	privdata.dptr = parentInfo;
+	privdata.dptr = shared_ptr<void>(parentInfo);
+	privdata.type = DT_POINTER;
 	modified.setPrivData(privdata);
 
 	gen_parent_num_map(&modified, rootlist);
@@ -2075,8 +2109,9 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist)
 	//modified.print(print_privdata);
 
 
-	delete parentInfo;
+	// parentInfo;
 	privdata.dptr = NULL;
+	privdata.type = DT_EMPTY;
 	modified.setPrivData(privdata);
 
 	hash_table[vs] = total;
@@ -2098,7 +2133,8 @@ int reduce_dag(DAG *g)
 	PrivDataUnion priv = g->getPrivData();
 	if (priv.dptr == NULL)
 	{
-		priv.dptr = new ParentInfo();
+		priv.dptr = shared_ptr<void>(new ParentInfo());
+		priv.type = DT_POINTER;
 	}
 	pathinfo_dag.setPrivData(priv);
 
@@ -2149,11 +2185,12 @@ int reduce_dag(DAG *g)
 	//modified.print(print_privdata);
 	//g->print(print_privdata);
 	//exit(0);
-	free_nodes_pathinfo(&pathinfo_dag);
+	//free_nodes_pathinfo(&pathinfo_dag);
 
-	delete (ParentInfo *)priv.dptr;
-	priv.dptr = 0;
-	pathinfo_dag.setPrivData(priv);
+	//delete (ParentInfo *)priv.dptr;
+	//priv.dptr = NULL;
+	//priv.type = DT_EMPTY;
+	//pathinfo_dag.setPrivData(priv);
 
 	return 0;
 }
@@ -2192,7 +2229,7 @@ int main(int argc, char *argv[])
 	{
 		// sanity check
 		rootid = rootlist.front();
-		//ret = get_consistent_subdag(g, rootid, subdags);
+		ret = get_consistent_subdag(g, rootid, subdags);
 		//print_subdag_list(subdags);
 	}
 

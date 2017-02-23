@@ -13,6 +13,7 @@
 #include <vector>
 #include <list>
 #include <map>
+#include <memory>
 
 using namespace std;
 
@@ -30,17 +31,54 @@ typedef list<int> IdList;
 
 typedef list<Edge> EdgeList;
 
-union PrivDataUnion{
-	long long dlonglong;
-	long dlong;
-	int dint;
-	float dfloat;
-	double ddouble;
-	void *dptr;
-	PrivDataUnion(): dlonglong(0) {}
+enum DataTypeEnum
+{
+	DT_EMPTY = 0,
+	DT_LONGLONG,
+	DT_LONG,
+	DT_INT,
+	DT_FLOAT,
+	DT_DOUBLE,
+	DT_POINTER,
 };
 
-typedef int (*PrivDataFn)(PrivDataUnion);
+struct PrivDataUnion;
+
+typedef int (*PrivDataFn)(PrivDataUnion *);
+
+typedef int (*ConstPrivDataFn)(const PrivDataUnion *);
+
+struct PrivDataUnion
+{
+	DataTypeEnum type;
+	//PrivDataFn destroy;
+	union DataUnion
+	{
+		long long dlonglong;
+		long dlong;
+		int dint;
+		float dfloat;
+		double ddouble;
+		//shared_ptr<void> dptr;
+
+		DataUnion();
+		//~DataUnion();
+	} _data;
+
+	long long &dlonglong;
+	long &dlong;
+	int &dint;
+	float &dfloat;
+	double &ddouble;
+	shared_ptr<void> dptr;
+	//shared_ptr<void> &dptr;
+	//void *&dptr;
+
+	PrivDataUnion();
+	PrivDataUnion(const PrivDataUnion &);
+	PrivDataUnion &operator =(const PrivDataUnion &o);
+	~PrivDataUnion();
+};
 
 class Vertex
 {
@@ -65,8 +103,9 @@ public:
 	int getParentList(IdList &list) const;
 	void getChildList(IdList &list) const;
 
-	void setPrivData(PrivDataUnion data);
-	PrivDataUnion getPrivData() const;
+	void setPrivData(const PrivDataUnion &data);
+	PrivDataUnion &getPrivData();
+	const PrivDataUnion &getPrivData() const;
 };
 
 typedef list<Vertex> VertexList;
@@ -101,11 +140,13 @@ public:
 
 	int addEdge(int vstart, int vend);
 
-	void setPrivData(PrivDataUnion data);
-	PrivDataUnion getPrivData() const;
+	void setPrivData(const PrivDataUnion &data);
+	PrivDataUnion &getPrivData();
+	const PrivDataUnion &getPrivData() const;
 
-	int setPrivData(int id, PrivDataUnion data);
-	PrivDataUnion getPrivData(int id) const;
+	int setPrivData(int id, const PrivDataUnion &data);
+	PrivDataUnion &getPrivData(int id);
+	const PrivDataUnion &getPrivData(int id) const;
 	void copyVertexPrivData(const DAG &other);
 	void clearVertexPrivData();
 
@@ -140,11 +181,11 @@ public:
 	void print() const;
 	void print(const IdList &ids) const;
 	void print(int id) const;
-	void print(PrivDataFn fn) const;
-	void print(int id, PrivDataFn fn) const;
+	void print(ConstPrivDataFn fn) const;
+	void print(int id, ConstPrivDataFn fn) const;
 	void printSubdag(const Vertex &v, int depth) const;
-	void printSubdag(const Vertex &v, int depth, PrivDataFn fn) const;
-	void printVertexes(PrivDataFn fn = 0) const;
+	void printSubdag(const Vertex &v, int depth, ConstPrivDataFn fn) const;
+	void printVertexes(ConstPrivDataFn fn = 0) const;
 	void printEdges() const;
 
 	//int merge(const DAG &other, DAG &dest); //

@@ -20,6 +20,83 @@ using namespace std;
 namespace NS_DAG
 {
 
+PrivDataUnion::DataUnion::DataUnion() :
+	dlonglong(0)
+{}
+
+//PrivDataUnion::DataUnion::~DataUnion()
+//{}
+
+PrivDataUnion::PrivDataUnion() :
+	type(DT_EMPTY),
+	dlonglong(_data.dlonglong),
+	dlong(_data.dlong),
+	dint(_data.dint),
+	dfloat(_data.dfloat),
+	ddouble(_data.ddouble),
+	dptr()
+	//dptr(_data.dptr)
+{}
+
+PrivDataUnion::PrivDataUnion(const PrivDataUnion &o) :
+	type(DT_EMPTY),
+	dlonglong(_data.dlonglong),
+	dlong(_data.dlong),
+	dint(_data.dint),
+	dfloat(_data.dfloat),
+	ddouble(_data.ddouble),
+	dptr()
+{
+	*this = o;
+}
+
+PrivDataUnion &PrivDataUnion::operator =(const PrivDataUnion &o)
+{
+	//if (type == DT_POINTER)
+	//{
+	//	//(*destroy)(this);
+	//	dptr = NULL;
+	//}
+	type = o.type;
+	_data = o._data;
+	dptr = o.dptr;
+	//switch (type)
+	//{
+	//	case DT_EMPTY:
+	//		dlonglong = 0;
+	//		break;
+	//	case DT_LONGLONG:
+	//		dlonglong = o.dlonglong;
+	//		break;
+	//	case DT_LONG:
+	//		dlong = o.dlong;
+	//		break;
+	//	case DT_INT:
+	//		dint = o.dint;
+	//		break;
+	//	case DT_FLOAT:
+	//		dfloat = o.dfloat;
+	//		break;
+	//	case DT_DOUBLE:
+	//		ddouble = o.ddouble;
+	//		break;
+	//	case DT_POINTER:
+	//		dptr = o.dptr;
+	//		break;
+	//	default:
+	//		assert(0);
+	//		break;
+	//}
+}
+
+PrivDataUnion::~PrivDataUnion()
+{
+	//if (type == DT_POINTER)
+	//{
+	//	//(*destroy)(this);
+	//}
+}
+
 Vertex::Vertex(int vid) : id(vid)
 {
 }
@@ -132,13 +209,18 @@ void Vertex::getChildList(IdList &list) const
 	}
 	return;
 }
-void Vertex::setPrivData(PrivDataUnion data)
+void Vertex::setPrivData(const PrivDataUnion &data)
 {
 	privdata = data;
 	return;
 }
 
-PrivDataUnion Vertex::getPrivData() const
+PrivDataUnion &Vertex::getPrivData()
+{
+	return privdata;
+}
+
+const PrivDataUnion &Vertex::getPrivData() const
 {
 	return privdata;
 }
@@ -427,18 +509,23 @@ int DAG::generateRoots()
 }
 
 
-void DAG::setPrivData(PrivDataUnion data)
+void DAG::setPrivData(const PrivDataUnion &data)
 {
 	privdata = data;
 	return;
 }
 
-PrivDataUnion DAG::getPrivData() const
+PrivDataUnion &DAG::getPrivData()
 {
 	return privdata;
 }
 
-int DAG::setPrivData(int id, PrivDataUnion data)
+const PrivDataUnion &DAG::getPrivData() const
+{
+	return privdata;
+}
+
+int DAG::setPrivData(int id, const PrivDataUnion &data)
 {
 	Vertex *v = findVertex(id);
 	if (v == NULL)
@@ -451,13 +538,25 @@ int DAG::setPrivData(int id, PrivDataUnion data)
 	return 0;
 }
 
-PrivDataUnion DAG::getPrivData(int id) const
+PrivDataUnion &DAG::getPrivData(int id)
 {
 	Vertex *v = findVertex(id);
 	if (v == NULL)
 	{
 		printf("Error in %s(): id:%07d not found.\n", __FUNCTION__, id);
-		return PrivDataUnion();
+		exit(1);
+	}
+
+	return v->getPrivData();
+}
+
+const PrivDataUnion &DAG::getPrivData(int id) const
+{
+	const Vertex *v = findVertex(id);
+	if (v == NULL)
+	{
+		printf("Error in %s(): id:%07d not found.\n", __FUNCTION__, id);
+		exit(1);
 	}
 
 	return v->getPrivData();
@@ -519,14 +618,14 @@ void DAG::printSubdag(const Vertex &v, int depth) const
 }
 
 
-void DAG::printSubdag(const Vertex &v, int depth, PrivDataFn fn) const
+void DAG::printSubdag(const Vertex &v, int depth, ConstPrivDataFn fn) const
 {
 	IdList vlist;
 	int layeroff = 0;
 
 	v.printId();
 	printf("(");
-	int privlen = fn(v.getPrivData());
+	int privlen = fn(&v.getPrivData());
 	printf(")");
 	layeroff += 2 + privlen;
 
@@ -591,7 +690,7 @@ void DAG::print(int id) const
 	return;
 }
 
-void DAG::print(PrivDataFn fn) const
+void DAG::print(ConstPrivDataFn fn) const
 {
 	FOR_EACH_IN_CONTAINER(idit, roots)
 	{
@@ -609,7 +708,7 @@ void DAG::print(PrivDataFn fn) const
 	return;
 }
 
-void DAG::print(int id, PrivDataFn fn) const
+void DAG::print(int id, ConstPrivDataFn fn) const
 {
 	Vertex *v = findVertex(id);
 	if (v == NULL)
@@ -622,7 +721,7 @@ void DAG::print(int id, PrivDataFn fn) const
 	return;
 }
 
-void DAG::printVertexes(PrivDataFn fn) const
+void DAG::printVertexes(ConstPrivDataFn fn) const
 {
 	if (fn == NULL)
 	{
@@ -638,7 +737,7 @@ void DAG::printVertexes(PrivDataFn fn) const
 		{
 			iter->second->printId();
 			printf("[");
-			fn(iter->second->getPrivData());
+			fn(&iter->second->getPrivData());
 			printf("], ");
 		}
 	}
