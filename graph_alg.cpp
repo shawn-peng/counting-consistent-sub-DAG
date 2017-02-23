@@ -1079,7 +1079,8 @@ int decompose_dag(DAG *g, const IdList &mpnodes, list<DAG> &subdags)
 
 		DAG tempdag;
 		pathinfo_dag.removeSubdagRootAt(newroots, tempdag);
-		free_nodes_pathinfo(&tempdag);
+		//<shared_ptr> auto free
+		//free_nodes_pathinfo(&tempdag);
 		//tempdag.clearVertexPrivData();
 
 		subdags.push_back(DAG());
@@ -1094,7 +1095,8 @@ int decompose_dag(DAG *g, const IdList &mpnodes, list<DAG> &subdags)
 
 	//print_subdag_list(subdags);
 
-	free_nodes_pathinfo(&pathinfo_dag);
+	//<shared_ptr> auto free
+	//free_nodes_pathinfo(&pathinfo_dag);
 
 	return 0;
 }
