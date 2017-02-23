@@ -248,7 +248,7 @@ int print_privdata_num(PrivDataUnion *data)
 
 int print_privdata_ptr(PrivDataUnion *data)
 {
-	return printf("%p", data->dptr);
+	return printf("%p", data->dptr.get());
 }
 
 int print_privdata_pathinfo(PrivDataUnion *data)
@@ -499,7 +499,8 @@ int free_nodes_pathinfo(DAG *g)
 		//	continue;
 		//}
 		//delete pinfo;
-		privdata.dptr = NULL;
+		//privdata.dptr = NULL;
+		privdata.dptr.reset();
 		privdata.type = DT_EMPTY;
 		v->setPrivData(privdata);
 
@@ -1233,7 +1234,8 @@ int get_consistent_subdag(DAG *g, int rootid, list<DAG> &subdags)
 	ret = enum_possibilities(g, g0, fringe, IdList(), subdags);
 
 	//delete parentInfo;
-	privdata.dptr = NULL;
+	//privdata.dptr = NULL;
+	privdata.dptr.reset();
 	privdata.type = DT_EMPTY;
 	g->setPrivData(privdata);
 
@@ -1704,7 +1706,8 @@ number_t count_consistent_subdag_by_cutting_fixed_path(DAG *g, int fixed, const 
 	}
 
 	//delete parentInfo;
-	privdata.dptr = NULL;
+	//privdata.dptr = NULL;
+	privdata.dptr.reset();
 	privdata.type = DT_EMPTY;
 	modified.setPrivData(privdata);
 
@@ -1995,7 +1998,8 @@ number_t count_consistent_subdag(DAG *g, int rootid)
 	//modified.print(print_privdata);
 
 	//delete parentInfo;
-	privdata.dptr = NULL;
+	//privdata.dptr = NULL;
+	privdata.dptr.reset();
 	privdata.type = DT_EMPTY;
 	modified.setPrivData(privdata);
 
@@ -2110,7 +2114,8 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist)
 
 
 	// parentInfo;
-	privdata.dptr = NULL;
+	//privdata.dptr = NULL;
+	privdata.dptr.reset();
 	privdata.type = DT_EMPTY;
 	modified.setPrivData(privdata);
 
