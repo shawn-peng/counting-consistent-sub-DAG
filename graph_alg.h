@@ -18,7 +18,5 @@ using namespace NS_DAG;
 
 
 
-double count_consistent_subdag(DAG *g, const IdList &rootlist);
-
 
 #endif /* __GRAPH_ALG_H_ */

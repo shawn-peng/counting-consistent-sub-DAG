@@ -7,22 +7,27 @@
 #include "dag.h"
 #include "common.h"
 
-#include <algorithm>
-#include <queue>
-#include <unordered_map>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <assert.h>
 #include <string.h>
+
+#include <iostream>
+#include <algorithm>
+#include <queue>
+#include <unordered_map>
 #include <sstream>
 #include <memory>
+
+#include <gmpxx.h>
 
 using namespace NS_DAG;
 
 #define MAX_NAME_LEN 63
 
-typedef double number_t;
+typedef mpz_class number_t;
+//typedef double number_t;
 
 //used for DAG indepency decomposition, this structure is for node
 struct PathInfo
@@ -55,6 +60,10 @@ static int hash_tries = 0;
 static int hash_hits = 0;
 
 static map<string, int> func_calls;
+
+
+number_t count_consistent_subdag(DAG *g, int rootid);
+number_t count_consistent_subdag(DAG *g, const IdList &rootlist);
 
 
 DAG *create_dag_from_matfile(const char *filename)
@@ -2256,7 +2265,8 @@ int main(int argc, char *argv[])
 	//printf("====================================================");
 	//printf("====================================================\n");
 	num = count_consistent_subdag(g, rootlist);
-	printf("Num of consistent sub-DAG: %.0f\n", num);
+	//printf("Num of consistent sub-DAG: %.0f\n", num);
+	cout << "Num of consistent sub-DAG: " << num << endl;
 
 	printf("(Sanity check)Num of consistent sub-DAG: %d\n", subdags.size());
 
