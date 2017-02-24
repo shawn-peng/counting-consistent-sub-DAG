@@ -1880,7 +1880,7 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g)
 
 		extend_subdags.pop_front();
 
-		for (int di = 0; di < recursion_depth; di++)
+		for (int di = 1; di < recursion_depth; di++)
 		{
 			printf("  ");
 		}
