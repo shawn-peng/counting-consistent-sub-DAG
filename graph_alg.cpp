@@ -1973,7 +1973,8 @@ number_t count_consistent_subdag(DAG *g, int rootid)
 
 		//number_t num = count_consistent_subdag_for_independent_subdag(subdag);
 		number_t num = count_consistent_subdag(subdag, srid);
-		printf("count is %f\n", num);
+		//printf("count is %f\n", num);
+		cout << "count is " << num << endl;
 
 		// add to original dag
 
