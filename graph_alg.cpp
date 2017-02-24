@@ -1871,7 +1871,11 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g)
 
 		extend_subdags.pop_front();
 
-		if (recursion_depth <= 2)
+		for (int di = 0; di < recursion_depth; di++)
+		{
+			printf("  ");
+		}
+		//if (recursion_depth <= 2)
 		{
 			printf("[%d] %d MP nodes left.\n", recursion_depth, extend_subdags.size());
 		}
