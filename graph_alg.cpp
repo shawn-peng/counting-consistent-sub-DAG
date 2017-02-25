@@ -24,8 +24,6 @@
 
 using namespace NS_DAG;
 
-#define MAX_NAME_LEN 63
-
 typedef mpz_class number_t;
 //typedef double number_t;
 
@@ -39,8 +37,8 @@ struct PathInfo
 };
 
 
-typedef map<int, int> ParentNumMap;
-typedef map<int, IdList> ParentMap;
+typedef unordered_map<int, int> ParentNumMap;
+typedef unordered_map<int, IdList> ParentMap;
 
 struct ParentInfo
 {
@@ -62,148 +60,6 @@ static int hash_hits = 0;
 static map<string, int> func_calls;
 
 
-number_t count_consistent_subdag(DAG *g, int rootid);
-number_t count_consistent_subdag(DAG *g, const IdList &rootlist);
-
-
-DAG *create_dag_from_matfile(const char *filename)
-{
-	FILE *f = fopen(filename, "r");
-	if (f == NULL)
-	{
-		perror(__FUNCTION__);
-		exit(1);
-	}
-
-	DAG *g = new DAG();
-	g->addVertex(1);
-
-	int i = 1, j = 1;
-	char c = fgetc(f);
-	while (c != EOF)
-	{
-		switch (c)
-		{
-			case '0':
-				j++;
-				break;
-			case '1':
-				g->addVertex(j);
-				g->addEdge(i, j);
-				j++;
-				break;
-			case ' ':
-				break;
-			case '\n':
-				j = 1;
-				i++;
-				break;
-			case '\r':
-				break;
-			default:
-				assert(0);
-				exit(1);
-				break;
-		}
-		c = fgetc(f);
-	}
-
-	if (errno)
-	{
-		perror(__FUNCTION__);
-		exit(1);
-	}
-
-
-	fclose(f);
-	return g;
-}
-
-
-DAG *create_dag_from_file(const char *filename)
-{
-	FILE *f = fopen(filename, "r");
-	if (f == NULL)
-	{
-		perror(__FUNCTION__);
-		exit(1);
-	}
-
-	char col1_label[MAX_NAME_LEN]; // the header wouldn't be larger than this
-	char col2_label[MAX_NAME_LEN]; // the header wouldn't be larger than this
-	int ret;
-
-	ret = fscanf(f, "%s%s\n", col1_label, col2_label);
-
-	printf("%s %s\n", col1_label, col2_label);
-	if (ret != 2)
-	{
-		perror(__FUNCTION__);
-	}
-
-	if (col1_label[0] == '0')
-	{
-		// This file is a matrix representation
-		fclose(f);
-		return create_dag_from_matfile(filename);
-	}
-
-	DAG *g = new DAG();
-
-	int go_prefix = true;
-	int parent_first = false;
-
-	if (strcmp(col1_label, "parent") == 0 ||
-			strcmp(col1_label, "source") == 0)
-	{
-		parent_first = true;
-	}
-
-	while (ret == 2)
-	{
-		int vstart, vend;
-
-		if (go_prefix)
-		{
-			ret = fscanf(f, "GO:%d\tGO:%d\n", &vend, &vstart);
-		}
-		else
-		{
-			ret = fscanf(f, "%d%d\n", &vend, &vstart);
-		}
-
-		if (ret != 2)
-		{
-			go_prefix = false;
-			ret = fscanf(f, "%d%d\n", &vend, &vstart);
-		}
-
-		if (parent_first)
-		{
-			swap(vend, vstart);
-		}
-
-		if (ret != 2)
-		{
-			if (errno)
-			{
-				perror(__FUNCTION__);
-			}
-		}
-		else
-		{
-			g->addVertex(vstart);
-			g->addVertex(vend);
-
-			g->addEdge(vstart, vend);
-
-			//g->print();
-		}
-	}
-
-	fclose(f);
-	return g;
-}
 
 void print_subdag_list(const list<DAG> &glist)
 {
@@ -240,27 +96,37 @@ void print_id_list(const IdList &list)
 	return;
 }
 
-int print_privdata(PrivDataUnion *data)
+int print_privdata(const PrivDataUnion *data)
 {
-	return printf("%.0f", data->ddouble);
+	//return printf("%.0f", data->ddouble);
+	const number_t &num = *(number_t *)(data->dptr.get());
+	stringstream ss;
+	ss << num;
+	printf("%s", ss.str().c_str());
+	return ss.str().size();
 }
 
-int print_privdata_int(PrivDataUnion *data)
+int print_privdata_int(const PrivDataUnion *data)
 {
 	return printf("%d", data->dint);
 }
 
-int print_privdata_num(PrivDataUnion *data)
+int print_privdata_num(const PrivDataUnion *data)
 {
 	//return printf("%.0f", data->ddouble);
+	const number_t &num = *(number_t *)(data->dptr.get());
+	stringstream ss;
+	ss << num;
+	printf("%s", ss.str().c_str());
+	return ss.str().size();
 }
 
-int print_privdata_ptr(PrivDataUnion *data)
+int print_privdata_ptr(const PrivDataUnion *data)
 {
 	return printf("%p", data->dptr.get());
 }
 
-int print_privdata_pathinfo(PrivDataUnion *data)
+int print_privdata_pathinfo(const PrivDataUnion *data)
 {
 	//shared_ptr<PathInfo> pinfo = static_pointer_cast<PathInfo>(data->dptr);
 	shared_ptr<PathInfo> pinfo = static_pointer_cast<PathInfo>(data->dptr);
@@ -1706,8 +1572,8 @@ number_t count_consistent_subdag_by_cutting_fixed_path(DAG *g, int fixed, const 
 	// Check there is something left
 	if (rootlist.size() != 0)
 	{
-		//printf("DAG after fixed path cutted.\n");
-		//modified.print(print_privdata);
+		printf("DAG after fixed path cutted.\n");
+		modified.print(print_privdata);
 		total += count_consistent_subdag(&modified, rootlist);
 	}
 	else
@@ -1741,8 +1607,8 @@ number_t count_consistent_subdag_adding_subdag(DAG *g, IdList mpnodes, const DAG
 	get_path_to_root(g, srid, pathdag);
 	//pathdag.setRoot(rootid);
 	//printf("--------------------------------------------\n");
-	//printf("Fixed path to root of node: %07d\n", srid);
-	//pathdag.print();
+	printf("Fixed path to root of node: %07d\n", srid);
+	pathdag.print();
 
 	number_t total = 0;
 	IdList indep_mpnodes;
@@ -1789,6 +1655,7 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g)
 		hash_hits++;
 		//printf("Hash hit! (%d)\n", hash_hits);
 		//printf("Hashed count (%f)\n", pos->second);
+		cout << "Hashed count " << pos->second << endl;
 		return pos->second;
 	}
 
@@ -1826,12 +1693,12 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g)
 		}
 	}
 
-	//printf("Tree after remove:\n");
-
 	number_t total;
 	total = count_consistent_subdag_tree(&modified);
 
-	//modified.print(print_privdata);
+	printf("Tree after remove:\n");
+	modified.print(print_privdata);
+
 
 	//printf("--------------------------------------------\n");
 
@@ -1860,7 +1727,7 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g)
 			continue;
 		}
 
-		//printf("Adding subdag %07d...\n", srid);
+		printf("Adding subdag %07d...\n", srid);
 
 		// add it to current DAG and update
 
@@ -1871,8 +1738,8 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g)
 		// each subdag added only has one mpnode
 		mpnodes.push_back(srid);
 
-		//printf("Updated: \n");
-		//modified.print();
+		printf("after subdag added: \n");
+		modified.print();
 
 		number_t num = count_consistent_subdag_adding_subdag(&modified, mpnodes, subdag);
 		//printf("num for adding subdag %07d: %.0f\n", srid, num);
@@ -1912,6 +1779,16 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g)
 // such that we may reduce the number of independent MP vertices.
 number_t count_consistent_subdag(DAG *g, int rootid)
 {
+	DAG rm_root(*g);
+	rm_root.removeVertex(rootid);
+	IdList rootlist;
+	rm_root.getRootList(rootlist);
+	//return count_consistent_subdag(&rm_root, rootlist) + 1;
+	number_t num = count_consistent_subdag(&rm_root, rootlist);
+	num += 1;
+	cout << "count with removing root: " << num << endl;
+	return num;
+	
 	// profiling
 	func_calls[__FUNCTION__]++;
 
@@ -1935,6 +1812,7 @@ number_t count_consistent_subdag(DAG *g, int rootid)
 	{
 		hash_hits++;
 		//printf("Hashed count (%f)\n", pos->second);
+		cout << "Hashed count " << pos->second << endl;
 		return pos->second;
 	}
 
@@ -2029,8 +1907,21 @@ number_t count_consistent_subdag(DAG *g, int rootid)
 //g(u), similar to previous one, but can take multiple roots
 number_t count_consistent_subdag(DAG *g, const IdList &rootlist)
 {
+	if (rootlist.size() == 1)
+	{
+		// single root case
+		return count_consistent_subdag(g, rootlist.front());
+	}
+	else if (rootlist.size() == 0)
+	{
+		return 0;
+	}
+
 	// profiling
 	func_calls[__FUNCTION__]++;
+
+	printf("counting for:\n");
+	g->print();
 
 	DAG modified(*g);
 //	modified.copyVertexPrivData(*g);
@@ -2055,6 +1946,7 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist)
 		hash_hits++;
 		//printf("Hash hit! (%d)\n", hash_hits);
 		//printf("Hashed count (%f)\n", pos->second);
+		cout << "Hashed count " << pos->second << endl;
 		return pos->second;
 	}
 
@@ -2066,9 +1958,9 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist)
 
 	decompose_dag(&modified, mpnodes, decomp_subdags);
 
-	//printf("decomposed subdags.\n");
-	//modified.print();
-	//print_subdag_list(decomp_subdags);
+	printf("decomposed subdags.\n");
+	modified.print();
+	print_subdag_list(decomp_subdags);
 
 	ParentMap &parent_map = get_parent_info(&modified).parentMap;
 
@@ -2119,13 +2011,14 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist)
 		}
 	}
 
-	//printf("After regenerate.\n");
-	//modified.print(print_privdata);
+	printf("After regenerate.\n");
+	modified.print(print_privdata);
 
 
 	// get combination
 	number_t total = count_consistent_subdag_for_independent_subdag(&modified);
 	//printf("the total is %f\n", total);
+	cout << "the total is " << total << endl;
 	//modified.print(print_privdata);
 
 
@@ -2222,55 +2115,9 @@ void free_dag(DAG *g)
 	delete g;
 }
 
-int main(int argc, char *argv[])
+
+void graph_alg_print_stats()
 {
-	const char *datafile = "data/basic_graphs/mini-tree.txt";
-	int rootid = 1;
-	IdList rootlist;
-	if (argc >= 2)
-	{
-		datafile = argv[1];
-	}
-	if (argc >= 3)
-	{
-		sscanf(argv[2], "%d", &rootid);
-	}
-	DAG *g = create_dag_from_file(datafile);
-	g->generateRoots();
-	g->getRootList(rootlist);
-
-	//g->setRoot(rootid);
-	int ret;
-
-	g->print();
-	printf("Vertices: %d\n", g->getVertexNum());
-	//g->print(988);
-	list<DAG> subdags;
-	if (g->getVertexNum() <= 35 && rootlist.size() == 1)
-	{
-		// sanity check
-		rootid = rootlist.front();
-		ret = get_consistent_subdag(g, rootid, subdags);
-		//print_subdag_list(subdags);
-	}
-
-	reduce_dag(g);
-
-	//g->printEdges();
-
-	//return 0;
-
-	number_t num;
-	//num = count_consistent_subdag_for_independent_subdag(g);
-	//printf("Num of consistent sub-DAG: %.0f\n", num);
-	//printf("====================================================");
-	//printf("====================================================\n");
-	num = count_consistent_subdag(g, rootlist);
-	//printf("Num of consistent sub-DAG: %.0f\n", num);
-	cout << "Num of consistent sub-DAG: " << num << endl;
-
-	printf("(Sanity check)Num of consistent sub-DAG: %d\n", subdags.size());
-
 	printf("Hash tries: %d\nHash hits: %d\nHit rates: %f\n",
 			hash_tries, hash_hits, (number_t)hash_hits/hash_tries);
 	printf("Hash count: %d\n", hash_table.size());
@@ -2279,6 +2126,6 @@ int main(int argc, char *argv[])
 	{
 		printf("Function %s has been called %d times.\n", iter->first.c_str(), iter->second);
 	}
-	free_dag(g);
-	return 0;
 }
+
+
