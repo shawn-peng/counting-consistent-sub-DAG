@@ -2272,7 +2272,7 @@ int main(int argc, char *argv[])
 	printf("(Sanity check)Num of consistent sub-DAG: %d\n", subdags.size());
 
 	printf("Hash tries: %d\nHash hits: %d\nHit rates: %f\n",
-			hash_tries, hash_hits, (number_t)hash_hits/hash_tries);
+			hash_tries, hash_hits, (double)hash_hits/hash_tries);
 	printf("Hash count: %d\n", hash_table.size());
 
 	FOR_EACH_IN_CONTAINER(iter, func_calls)
