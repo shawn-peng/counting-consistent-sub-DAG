@@ -8,6 +8,6 @@ echo "Usage: $0 <mfo|cco|bpo> <level>"
 exit 1
 fi
 
-./graph_alg data/gene_ontology/$dag/all_${dag}${level}_rel.txt > log/${dag}${level}_all.log &
-./graph_alg data/gene_ontology/$dag/used_${dag}${level}_rel.txt > log/${dag}${level}_used.log &
+{ time ./graph_alg data/gene_ontology/$dag/all_${dag}${level}_rel.txt; } &> log/${dag}${level}_all.log &
+{ time ./graph_alg data/gene_ontology/$dag/used_${dag}${level}_rel.txt; } &> log/${dag}${level}_used.log &
 
