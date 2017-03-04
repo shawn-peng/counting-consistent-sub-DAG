@@ -6,14 +6,12 @@ endif
 
 CPPFLAGS+=$(OPT) -std=c++0x -lstdc++ -lgmpxx -lgmp
 
-all: graph_alg
-
-#alg_test
+all: graph_alg graph_gen
 
 graph_alg: main.o graph_alg.o dag_generator.o dag.o
 	$(CC) -o $@ $^ $(CPPFLAGS)
 
-alg_test: test.o graph_alg.o dag_generator.o dag.o
+graph_gen: graph_gen.o dag_generator.o dag.o
 	$(CC) -o $@ $^ $(CPPFLAGS)
 
 %.o: %.cpp
