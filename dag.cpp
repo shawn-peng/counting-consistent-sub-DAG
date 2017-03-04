@@ -754,7 +754,7 @@ void DAG::printEdges() const
 		FOR_EACH_IN_CONTAINER(chiter, children)
 		{
 			iter->second->printId();
-			printf(", %07d\n", *chiter);
+			printf("\t%07d\n", *chiter);
 		}
 	}
 	return;
