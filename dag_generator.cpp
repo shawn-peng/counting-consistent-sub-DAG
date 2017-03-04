@@ -4,6 +4,7 @@
 #include "dag.h"
 #include "common.h"
 
+#include <iostream>
 #include <vector>
 #include <random>
 #include <set>
@@ -17,6 +18,7 @@
 
 #define MAX_NAME_LEN 63
 
+using namespace std;
 using namespace NS_DAG;
 
 static std::random_device rd;     // only used once to initialise (seed) engine
@@ -71,8 +73,13 @@ DAG *create_random_dag(int n, rand_int_fn_t rand_fn)
 		{
 			g->addEdge(all_nodes[*indit], id);
 		}
+
+		if (np == 0)
+		{
+			g->addToRootList(id);
+		}
+		all_nodes.push_back(id);
 	}
-	g->setRoot(1);
 	return g;
 }
 
@@ -147,7 +154,7 @@ DAG *create_dag_from_file(const char *filename)
 
 	ret = fscanf(f, "%s%s\n", col1_label, col2_label);
 
-	printf("%s %s\n", col1_label, col2_label);
+	//printf("%s %s\n", col1_label, col2_label);
 	if (ret != 2)
 	{
 		perror(__FUNCTION__);
@@ -186,6 +193,10 @@ DAG *create_dag_from_file(const char *filename)
 
 		if (ret != 2)
 		{
+			if (ret == EOF)
+			{
+				break;
+			}
 			go_prefix = false;
 			ret = fscanf(f, "%d%d\n", &vend, &vstart);
 		}
