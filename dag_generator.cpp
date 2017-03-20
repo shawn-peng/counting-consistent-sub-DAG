@@ -14,6 +14,11 @@
 #include <errno.h>
 #include <assert.h>
 #include <string.h>
+#include <boost/random.hpp>
+#include <boost/nondet_random.hpp>
+#include <boost/random/mersenne_twister.hpp>
+//#include <boost/random/uniform_int_distribution.hpp>
+#include <boost/random/uniform_int.hpp>
 
 
 #define MAX_NAME_LEN 63
@@ -21,13 +26,15 @@
 using namespace std;
 using namespace NS_DAG;
 
-static std::random_device rd;     // only used once to initialise (seed) engine
-static std::mt19937 rng(rd());    // random-number engine used (Mersenne-Twister in this case)
+static boost::random_device rd;     // only used once to initialise (seed) engine
+static boost::mt19937 rng(rd());    // random-number engine used (Mersenne-Twister in this case)
 
 int RandInt(int min, int max)
 {
-	std::uniform_int_distribution<int> uni(min,max); // guaranteed unbiased
+	//boost::random::uniform_int_distribution<int> uni(min,max); // guaranteed unbiased
+	boost::uniform_int<> uni(min,max); // guaranteed unbiased
 	return uni(rng);
+	//return 0;
 }
 
 /*

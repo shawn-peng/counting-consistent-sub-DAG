@@ -1691,7 +1691,7 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 			hash_hits++;
 			//printf("Hash hit! (%d)\n", hash_hits);
 			//printf("Hashed count (%f)\n", pos->second);
-			cout << "Hashed count " << pos->second << endl;
+			//cout << "Hashed count " << pos->second << endl;
 			return pos->second;
 		}
 	}
@@ -1797,7 +1797,7 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 		}
 	}
 
-	cout << "the total is " << total << endl;
+	//cout << "the total is " << total << endl;
 
 //	printf("num for node %07d: %.0f.\n", rootid, total);
 //	PrivDataUnion priv;
@@ -2013,7 +2013,7 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist)
 		hash_hits++;
 		//printf("Hash hit! (%d)\n", hash_hits);
 		//printf("Hashed count (%f)\n", pos->second);
-		cout << "Hashed count " << pos->second << endl;
+		//cout << "Hashed count " << pos->second << endl;
 		return pos->second;
 	}
 
