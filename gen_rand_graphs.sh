@@ -4,8 +4,9 @@ NODE_NUM=25
 
 NUM=5000
 
-for i in $(seq 1 $END);
+for i in $(seq 1 $NUM);
 do
-	./graph_gen.sh ${NODE_NUM} > data/rand/g${i}.txt;
+	echo $i
+	./graph_gen ${NODE_NUM} > data/rand/g${i}.txt;
 done
 
