@@ -13,6 +13,7 @@
 
 #include <boost/random.hpp>
 //#include <boost/random/uniform_real_distribution.hpp>
+#include <boost/nondet_random.hpp>
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/variate_generator.hpp>
 #include <boost/math/distributions/pareto.hpp>
@@ -21,7 +22,9 @@ using namespace std;
 using namespace NS_DAG;
 
 //static std::random_device rd;
-static boost::mt19937 randGen(std::time(0)); //held constant for repeatability
+static boost::random_device rd;
+//static boost::mt19937 randGen(std::time(0)); //held constant for repeatability
+static boost::mt19937 randGen(rd()); //held constant for repeatability
 static boost::exponential_distribution<> dist;
 //static boost::random::uniform_real_distribution<> uniformReal(1.0,10.0); //this range can be adjusted to effect values
 static boost::variate_generator<boost::mt19937&, boost::exponential_distribution<> > generator(randGen, dist);
