@@ -15,6 +15,23 @@
 using namespace std;
 using namespace NS_DAG;
 
+int get_leaves(DAG *g, IdList &l)
+{
+	IdList Nodes;
+	g->getVertexList(Nodes);
+
+	FOR_EACH_IN_CONTAINER(iter, Nodes)
+	{
+		IdList children;
+		g->getChildList(*iter, children);
+		if (children.size() == 0)
+		{
+			l.push_back(*iter);
+		}
+	}
+	return 0;
+}
+
 
 int get_depth(DAG *g)
 {
@@ -148,9 +165,9 @@ int main(int argc, char **argv)
 
 	//g->print();
 
-	IdList nodes;
-	g->getVertexList(nodes);
-	printf("number of leaves: %d\n", nodes.size());
+	IdList leaves;
+	get_leaves(g, leaves);
+	printf("number of leaves: %d\n", leaves.size());
 
 	int depth = get_depth(g);
 	printf("depth : %d\n", depth);
