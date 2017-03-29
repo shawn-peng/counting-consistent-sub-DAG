@@ -40,3 +40,9 @@ log*
 *.log
 *.pdf
 *.bak
+
+# metapost
+pics/*.eps
+pics/*.pdf
+pics/*.mpx
+pics/mpxerr.tex
