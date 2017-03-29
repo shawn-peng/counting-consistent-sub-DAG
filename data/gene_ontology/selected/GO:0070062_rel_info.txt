@@ -1,0 +1,15 @@
+number of leaves: 1
+depth : 3
+number of MP nodes: 1
+
+node 0070062 has 0 parent(s)
+node 1990562 has 2 parent(s)
+node 1990563 has 1 parent(s)
+
+node 0070062 has 2 children
+node 1990562 has 0 children
+node 1990563 has 1 children
+
+Time used: 0m0.003s
+Number of recursive calls: 1
+Total count: 3

@@ -1,0 +1,49 @@
+number of leaves: 13
+depth : 6
+number of MP nodes: 4
+
+node 0003052 has 1 parent(s)
+node 0003053 has 1 parent(s)
+node 0003054 has 1 parent(s)
+node 0003055 has 1 parent(s)
+node 0003067 has 1 parent(s)
+node 0007623 has 0 parent(s)
+node 0008062 has 1 parent(s)
+node 0010617 has 1 parent(s)
+node 0022410 has 2 parent(s)
+node 0032922 has 1 parent(s)
+node 0035648 has 1 parent(s)
+node 0042745 has 1 parent(s)
+node 0042746 has 1 parent(s)
+node 0042747 has 2 parent(s)
+node 0042748 has 2 parent(s)
+node 0045475 has 1 parent(s)
+node 0048512 has 1 parent(s)
+node 0050802 has 2 parent(s)
+node 0060086 has 1 parent(s)
+node 0097167 has 1 parent(s)
+
+node 0003052 has 2 children
+node 0003053 has 1 children
+node 0003054 has 0 children
+node 0003055 has 0 children
+node 0003067 has 0 children
+node 0007623 has 7 children
+node 0008062 has 0 children
+node 0010617 has 0 children
+node 0022410 has 4 children
+node 0032922 has 0 children
+node 0035648 has 0 children
+node 0042745 has 2 children
+node 0042746 has 0 children
+node 0042747 has 0 children
+node 0042748 has 0 children
+node 0045475 has 0 children
+node 0048512 has 5 children
+node 0050802 has 2 children
+node 0060086 has 0 children
+node 0097167 has 0 children
+
+Time used: 0m0.004s
+Number of recursive calls: 5
+Total count: 23280
