@@ -31,14 +31,14 @@ static boost::variate_generator<boost::mt19937&, boost::exponential_distribution
 
 int paretoRand()
 {
-     double cdfComplement;
-	 //cdfComplement = boost::math::cdf(boost::math::complement(dist,generator()));
+	double cdfComplement;
+	//cdfComplement = boost::math::cdf(boost::math::complement(dist,generator()));
 
-	 cdfComplement = generator();
-	 //cout << "exponential : " << (int)cdfComplement << endl;
-	 //cout << "pareto : " << cdfComplement << endl;
+	cdfComplement = generator();
+	//cout << "exponential : " << (int)cdfComplement << endl;
+	//cout << "pareto : " << cdfComplement << endl;
 
-     return exp(cdfComplement);
+	return exp(cdfComplement);
 }
 
 
