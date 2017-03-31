@@ -2227,4 +2227,12 @@ void graph_alg_print_stats()
 	}
 }
 
+void graph_alg_clear_hash()
+{
+	hash_table.clear();
+	hash_tries = 0;
+	hash_hits = 0;
+
+	func_calls.clear();
+}
 

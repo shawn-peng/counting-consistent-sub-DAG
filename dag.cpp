@@ -201,6 +201,10 @@ void Vertex::printId() const
 	return;
 }
 
+int Vertex::getChildNum() const
+{
+	return edges.size();
+}
 void Vertex::getChildList(IdList &list) const
 {
 	FOR_EACH_IN_CONTAINER(iter, edges)
@@ -394,6 +398,17 @@ int DAG::getVertexString(string &str) const
 	}
 	str = string(move(oss.str()));
 	return 0;
+}
+
+int DAG::getChildNum(int id) const
+{
+	Vertex *v = findVertex(id);
+	if (v == NULL)
+	{
+		printf("Error in %s(): id:%07d not found.\n", __FUNCTION__, id);
+		exit(-1);
+	}
+	return v->getChildNum();
 }
 
 int DAG::getChildList(int id, IdList &list) const

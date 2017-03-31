@@ -265,10 +265,6 @@ DAG *try_create_random_dag_with_depth(int n, int depth, rand_int_fn_t rand_fn)
 	for (int i = 1; i < depth; i++)
 	{
 		int cur_node = spine[i];
-		if (in_degrees[cur_node-1] <= 1)
-		{
-			continue;
-		}
 
 		int new_np = in_degrees[cur_node-1] - 1; // already have one
 
@@ -310,9 +306,15 @@ DAG *try_create_random_dag_with_depth(int n, int depth, rand_int_fn_t rand_fn)
 DAG *create_random_dag_with_depth(int n, int depth, rand_int_fn_t rand_fn)
 {
 	DAG *g = NULL;
+	int retries = 0;
 	while (g == NULL)
 	{
 		g = try_create_random_dag_with_depth(n, depth, rand_fn);
+		if (retries++ >= 100)
+		{
+			cerr << "inappropriate parameters." << endl;
+			break;
+		}
 	}
 	return g;
 }

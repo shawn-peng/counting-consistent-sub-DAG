@@ -101,6 +101,7 @@ public:
 	int removeParent(int parent);
 	int getParentNum() const;
 	int getParentList(IdList &list) const;
+	int getChildNum() const;
 	void getChildList(IdList &list) const;
 
 	void setPrivData(const PrivDataUnion &data);
@@ -162,6 +163,7 @@ public:
 	int getVertexList(IdList &list) const;
 	int getVertexString(string &str) const;
 
+	int getChildNum(int id) const;
 	int getChildList(int id, IdList &list) const;
 
 	//int getAllParent(int id, IdList parents);

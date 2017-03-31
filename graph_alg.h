@@ -30,4 +30,7 @@ void free_dag(NS_DAG::DAG *g);
 //print statistics
 void graph_alg_print_stats();
 
+//clear static info (NEED to count for different dags in one process)
+void graph_alg_clear_hash();
+
 #endif /* __GRAPH_ALG_H_ */
