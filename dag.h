@@ -159,7 +159,6 @@ public:
 	Vertex *findVertex(int id) const;
 	bool checkVertex(int id) const;
 
-	int getVertexNumber() const;
 	int getVertexList(IdList &list) const;
 	int getVertexString(string &str) const;
 
@@ -169,6 +168,8 @@ public:
 	//int getAllParent(int id, IdList parents);
 	int getParentNum(int id);
 	int getParentList(int id, IdList &list) const;
+
+	int getMultiParentVertices(IdList &list) const;
 
 	void setRoot(int id);
 	int getRoot() const;

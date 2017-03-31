@@ -101,25 +101,32 @@ void output_rand_dag(int nv, int depth)
 			continue;
 		}
 
-		IdList roots;
-		g->getRootList(roots);
-		number_t x = count_consistent_subdag(g, roots);
-		graph_alg_clear_hash();
-		if ((nv < 15 || depth <= 3 || depth >= nv-3) && counts.count(x))
+		if (nv < 15 || depth <= 3 || depth >= nv-3)
 		{
-			cerr << "dag count(" << x << ") overlaps." << endl;
-			overlapping_times++;
+			IdList roots;
+			g->getRootList(roots);
+			number_t x = count_consistent_subdag(g, roots);
+			graph_alg_clear_hash();
 
-			delete generator;
-			delete g;
-			g = NULL;
-			if (overlapping_times > max(10, (int)counts.size()))
+			if (counts.count(x))
 			{
-				cerr << "overlapping_times: " << overlapping_times << endl <<
-					"dag generated: " << counts.size() << endl;
-				break;
+				cerr << "dag count(" << x << ") overlaps." << endl;
+				overlapping_times++;
+
+				delete generator;
+				delete g;
+				g = NULL;
+				if (overlapping_times > max(10, (int)counts.size()))
+				{
+					cerr << "overlapping_times: " << overlapping_times << endl <<
+						"dag generated: " << counts.size() << endl;
+					break;
+				}
+
+				continue;
 			}
-			continue;
+
+			counts.insert(x);
 		}
 		//if (counts.size() > 1000)
 		if (i > 100)
@@ -131,8 +138,6 @@ void output_rand_dag(int nv, int depth)
 			g = NULL;
 			break;
 		}
-
-		counts.insert(x);
 
 		struct stat st = {0};
 
@@ -176,7 +181,7 @@ int main(int argc, char **argv)
 	//string categ;
 	stringstream ss;
 
-	for (int nv = 41; nv <= 100; nv++)
+	for (int nv = 43; nv <= 100; nv++)
 	{
 		for (int depth = 2; depth <= nv; depth++)
 		{

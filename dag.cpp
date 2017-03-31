@@ -380,6 +380,18 @@ int DAG::getEdgeNum() const
 	return sum;
 }
 
+int DAG::getMultiParentVertices(IdList &list) const
+{
+	FOR_EACH_IN_CONTAINER(iter, vertices)
+	{
+		if (iter->getParentNum() > 1)
+		{
+			list.push_back(iter->getId());
+		}
+	}
+	return 0;
+}
+
 int DAG::getVertexList(IdList &list) const
 {
 	FOR_EACH_IN_CONTAINER(iter, vindex)

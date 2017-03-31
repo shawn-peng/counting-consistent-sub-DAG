@@ -462,52 +462,106 @@ int get_signature(DAG *g, string &str)
 }
 
 
-//D(u), get the smallest consistent sub-DAG for vertex u with ID(id)
+int get_descendents_subdag(DAG *g, int id, DAG &subdag)
+{
+	if (subdag.getVertexNum() == 0)
+	{
+		subdag.addToRootList(id);
+	}
+	Vertex *v = subdag.findVertex(id);
+	if (v != NULL)
+	{
+		return 0;
+	}
+	subdag.addVertex(id);
+
+	IdList children;
+	g->getChildList(id, children);
+
+	// add parent(s) to path
+	FOR_EACH_IN_CONTAINER(iter, children)
+	{
+		int cid = *iter;
+		get_descendents_subdag(g, cid, subdag);
+		subdag.addEdge(id, cid);
+	}
+
+	return 0;
+}
+
 int get_path_to_root(DAG *g, int id, DAG &subdag)
 {
-	// may need several path
-	//int rootid = g->getRoot();
-
+	if (g->isRoot(id))
+	{
+		subdag.addToRootList(id);
+	}
 	Vertex *v = subdag.findVertex(id);
+	if (v != NULL)
+	{
+		return 0;
+	}
 	subdag.addVertex(id);
 
 	IdList parents;
-	get_parents(g, id, parents);
-
-	IdList pathp;
-	if (v != NULL)
-	{
-		v->getParentList(pathp);
-	}
+	g->getParentList(id, parents);
 
 	// add parent(s) to path
 	FOR_EACH_IN_CONTAINER(iter, parents)
 	{
 		int pid = *iter;
-		IdList::iterator ppit = find(pathp.begin(), pathp.end(), *iter);
-		if (ppit != pathp.end())
-		{
-			//this edge already in path
-			continue;
-		}
-		subdag.addVertex(pid);
+		get_path_to_root(g, pid, subdag);
 		subdag.addEdge(pid, id);
 	}
 
-	FOR_EACH_IN_CONTAINER(iter, parents)
-	{
-		int pid = *iter;
-		if (g->isRoot(pid))
-		{
-			subdag.addToRootList(pid);
-		}
-		else
-		{
-			get_path_to_root(g, pid, subdag);
-		}
-	}
 	return 0;
 }
+
+////D(u), get the smallest consistent sub-DAG for vertex u with ID(id)
+//int get_path_to_root(DAG *g, int id, DAG &subdag)
+//{
+//	// may need several path
+//	//int rootid = g->getRoot();
+//
+//	Vertex *v = subdag.findVertex(id);
+//	subdag.addVertex(id);
+//
+//	IdList parents;
+//	get_parents(g, id, parents);
+//
+//	IdList pathp;
+//	if (v != NULL)
+//	{
+//		v->getParentList(pathp);
+//	}
+//
+//	// add parent(s) to path
+//	FOR_EACH_IN_CONTAINER(iter, parents)
+//	{
+//		int pid = *iter;
+//		IdList::iterator ppit = find(pathp.begin(), pathp.end(), *iter);
+//		if (ppit != pathp.end())
+//		{
+//			//this edge already in path
+//			continue;
+//		}
+//		subdag.addVertex(pid);
+//		subdag.addEdge(pid, id);
+//	}
+//
+//	FOR_EACH_IN_CONTAINER(iter, parents)
+//	{
+//		int pid = *iter;
+//		if (g->isRoot(pid))
+//		{
+//			subdag.addToRootList(pid);
+//		}
+//		else
+//		{
+//			get_path_to_root(g, pid, subdag);
+//		}
+//	}
+//	return 0;
+//}
 
 // Similar to above, but check if any vertex in 'exclude' will be added
 // to the path, if that's the case, return 1
@@ -1670,10 +1724,11 @@ number_t count_consistent_subdag_adding_subdag(DAG *g, IdList mpnodes, const DAG
 	return total;
 }
 
+static int recursion_depth = 0;
 
 // g(u), calculate the number of consistent sub-DAGs in a DAG g
 // CAUTION: for the regenerated dag we can't use the hashed value
-number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash = true)
+number_t count_consistent_subdag_for_independent_subdag_nonrecursive(DAG *g, bool using_hash = true)
 {
 	// profiling
 	func_calls[__FUNCTION__]++;
@@ -1696,7 +1751,7 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 		}
 	}
 
-	static int recursion_depth = 0;
+	//static int recursion_depth = 0;
 	recursion_depth++;
 
 	IdList mpnodes;
@@ -1806,6 +1861,137 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 	//printf("num for subdag with roots (");
 	//print_id_list(roots);
 	//printf("): %.0f.\n", total);
+
+	if (using_hash)
+	{
+		hash_table[vs] = total;
+		//printf("hash count: %d (%f)\n",
+		//		hash_table.size(), (number_t)hash_hits/hash_tries);
+	}
+
+	recursion_depth--;
+	return total;
+}
+
+pair<int, int> analyze_subproblem_scales(DAG *g, int id)
+{
+	DAG m1(*g), m2(*g);
+
+	DAG ancestors, descendents;
+	get_path_to_root(&m1, id, ancestors);
+	m1.removeSubdag(ancestors);
+	get_descendents_subdag(&m2, id, descendents);
+	m2.removeSubdag(descendents);
+	//m2.removeSubdagRootAt(id);
+
+	int s1, s2;
+	IdList mpnodesA, mpnodesD;
+	m1.getMultiParentVertices(mpnodesA);
+	m2.getMultiParentVertices(mpnodesD);
+
+	s1 = mpnodesA.size();
+	s2 = mpnodesD.size();
+
+	return make_pair(s1, s2);
+}
+
+// g(u), calculate the number of consistent sub-DAGs in a DAG g
+// CAUTION: for the regenerated dag we can't use the hashed value
+number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash = true)
+{
+	// profiling
+	func_calls[__FUNCTION__]++;
+
+	string vs;
+	get_signature(g, vs);
+	if (using_hash)
+	{
+		//printf("vertices: %s\n", vs.c_str());
+		//printf("Hash count: %d\n", hash_table.size());
+		auto pos = hash_table.find(vs);
+		hash_tries++;
+		if (pos != hash_table.end())
+		{
+			hash_hits++;
+			//printf("Hash hit! (%d)\n", hash_hits);
+			//printf("Hashed count (%f)\n", pos->second);
+			//cout << "Hashed count " << pos->second << endl;
+			return pos->second;
+		}
+	}
+
+	//static int recursion_depth = 0;
+	recursion_depth++;
+
+	IdList roots;
+	g->getRootList(roots);
+	//if (roots.size() > 1)
+	//{
+	//	printf("the independent subdag have more than one root.\n");
+	//}
+	list<DAG> extend_subdags;
+
+	number_t total;
+
+	IdList mpnodes;
+	g->getMultiParentVertices(mpnodes);
+
+	if (mpnodes.size() == 0)
+	{
+		total = count_consistent_subdag_tree(g);
+	}
+	else if (mpnodes.size() < 30)
+	{
+		total = count_consistent_subdag_for_independent_subdag_nonrecursive(g, using_hash);
+	}
+	else
+	{
+		for (int di = 1; di < recursion_depth; di++)
+		{
+			printf("  ");
+		}
+		//if (recursion_depth <= 2)
+		{
+			printf("[%d] %d MP nodes left.\n",
+					recursion_depth, mpnodes.size());
+		}
+
+		pair<int, int> min_scales = make_pair(INT_MAX, INT_MAX);
+		int best_node = 0;
+		// find the best node to split count
+		FOR_EACH_IN_CONTAINER(iter, mpnodes)
+		{
+			int vid = *iter;
+			pair<int, int> scales = analyze_subproblem_scales(g, vid);
+			if (scales.first < scales.second)
+			{
+				swap(scales.first, scales.second);
+			}
+
+			if (scales < min_scales)
+			{
+				min_scales = scales;
+				best_node = vid;
+			}
+		}
+
+		DAG mA(*g), mD(*g);
+		int id = best_node;
+
+		DAG ancestors, descendents;
+		get_path_to_root(g, id, ancestors);
+		mA.removeSubdag(ancestors);
+		get_descendents_subdag(g, id, descendents);
+		mD.removeSubdag(descendents);
+
+		IdList roots1, roots2;
+		mA.getRootList(roots1);
+		mD.getRootList(roots2);
+		number_t num1 = count_consistent_subdag(&mA, roots1);
+		number_t num2 = count_consistent_subdag(&mD, roots2);
+
+		total = num1 + num2 + 1;
+	}
 
 	if (using_hash)
 	{

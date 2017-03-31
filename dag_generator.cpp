@@ -34,7 +34,6 @@ int RandInt(int min, int max)
 	//boost::random::uniform_int_distribution<int> uni(min,max); // guaranteed unbiased
 	boost::uniform_int<> uni(min,max); // guaranteed unbiased
 	return uni(rng);
-	//return 0;
 }
 
 /*
