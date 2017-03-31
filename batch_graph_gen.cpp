@@ -84,6 +84,10 @@ void output_rand_dag(int nv, int depth)
 	while (1)
 	{
 		double lambda = param_generator();
+		if (depth == 2)
+		{// all nodes should only have one parent, except the root which has none
+			lambda = 0.0000001;
+		}
 		cerr << "lambda=" << lambda << endl;
 		dist = Dist_t(lambda);
 		generator = new Generator_t(randGen, dist);
@@ -118,7 +122,7 @@ void output_rand_dag(int nv, int depth)
 			continue;
 		}
 		//if (counts.size() > 1000)
-		if (i > 1000)
+		if (i > 100)
 		{
 			cerr << "overlapping_times: " << overlapping_times << endl <<
 				"dag generated: " << counts.size() << endl;
@@ -172,7 +176,7 @@ int main(int argc, char **argv)
 	//string categ;
 	stringstream ss;
 
-	for (int nv = 2; nv <= 100; nv++)
+	for (int nv = 41; nv <= 100; nv++)
 	{
 		for (int depth = 2; depth <= nv; depth++)
 		{
