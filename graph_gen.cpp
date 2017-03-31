@@ -101,9 +101,9 @@ int main(int argc, char **argv)
 
 	//randGen.set
 
-	g->print();
-	//printf("source	target\n");
-	//g->printEdges();
+	//g->print();
+	printf("source	target\n");
+	g->printEdges();
 
 	delete generator;
 	return 0;

@@ -120,12 +120,12 @@ DAG *try_create_random_dag_with_depth(int n, int depth, rand_int_fn_t rand_fn)
 		in_degrees.push_back(rand_fn());
 	}
 	in_degrees[0] = 0;
-	cout << "in-degrees: ";
-	for (int i = 0; i < n; i++)
-	{
-		cout << in_degrees[i] << ", ";
-	}
-	cout << endl;
+	//cout << "in-degrees: ";
+	//for (int i = 0; i < n; i++)
+	//{
+	//	cout << in_degrees[i] << ", ";
+	//}
+	//cout << endl;
 
 
 	std::vector<int> all_nodes;
@@ -185,12 +185,12 @@ DAG *try_create_random_dag_with_depth(int n, int depth, rand_int_fn_t rand_fn)
 			remain_nodes.erase(id);
 		}
 	}
-	cout << "available elements: " << endl;
-	for (auto e = avail_nodes.begin(); e != avail_nodes.end(); e++)
-	{
-		cout << *e << ", ";
-	}
-	cout << endl;
+	//cout << "available elements: " << endl;
+	//for (auto e = avail_nodes.begin(); e != avail_nodes.end(); e++)
+	//{
+	//	cout << *e << ", ";
+	//}
+	//cout << endl;
 
 	for (int i = depth; i < n; i++)
 	{
@@ -205,7 +205,7 @@ DAG *try_create_random_dag_with_depth(int n, int depth, rand_int_fn_t rand_fn)
 		//{
 		//	cur_node = rand_draw_from(avail_nodes);
 		//}
-		cout << "rand node: " << cur_node << endl;
+		//cout << "rand node: " << cur_node << endl;
 
 		g->addVertex(cur_node);
 
@@ -243,15 +243,15 @@ DAG *try_create_random_dag_with_depth(int n, int depth, rand_int_fn_t rand_fn)
 		for (int j = 0; j < n; j++)
 		{
 			int id = j + 1;
-			if (in_degrees[j] >= nv - nleaves)
-			{
-				cout << "node " << id << " in-degree: " <<
-					in_degrees[j] << endl;
-			}
+			//if (in_degrees[j] >= nv - nleaves)
+			//{
+			//	cout << "node " << id << " in-degree: " <<
+			//		in_degrees[j] << endl;
+			//}
 			if ((in_degrees[j] <= nv - nleaves) &&
 				remain_nodes.count(id))
 			{
-				cout << "add " << id << " to candidates" << endl;
+				//cout << "add " << id << " to candidates" << endl;
 				avail_nodes.push_back(id);
 				remain_nodes.erase(id);
 			}
@@ -265,12 +265,12 @@ DAG *try_create_random_dag_with_depth(int n, int depth, rand_int_fn_t rand_fn)
 	for (int i = 1; i < depth; i++)
 	{
 		int cur_node = spine[i];
-		if (in_degrees[cur_node] <= 1)
+		if (in_degrees[cur_node-1] <= 1)
 		{
 			continue;
 		}
 
-		int np = in_degrees[cur_node-1];
+		int new_np = in_degrees[cur_node-1] - 1; // already have one
 
 		std::vector<int> possible_parents;
 		for (int j = 0; j < added_nodes.size(); j++)
@@ -282,18 +282,28 @@ DAG *try_create_random_dag_with_depth(int n, int depth, rand_int_fn_t rand_fn)
 				possible_parents.push_back(id);
 			}
 		}
-		if (possible_parents.size() < np)
+		if (possible_parents.size() < new_np)
 		{
 			delete g;
 			return NULL;
 		}
-		for (int j = 0; j < np; j++)
+		for (int j = 0; j < new_np; j++)
 		{
 			int pid = rand_draw_from(possible_parents);
 			g->addEdge(pid, cur_node);
 		}
 		prev_node = cur_node;
 	}
+
+	int sum = 0;
+	cerr << "in-degrees: ";
+	for (int i = 0; i < n; i++)
+	{
+		cerr << in_degrees[i] << " ";
+		sum += in_degrees[i];
+	}
+	cerr << endl;
+	cerr << "number of edges should be " << sum << endl;
 	
 	return g;
 }
