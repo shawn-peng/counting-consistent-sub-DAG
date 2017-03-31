@@ -99,7 +99,7 @@ public:
 	void addParent(int id);
 	int removeEdge(int vend);
 	int removeParent(int parent);
-	int getParentNum();
+	int getParentNum() const;
 	int getParentList(IdList &list) const;
 	void getChildList(IdList &list) const;
 
@@ -177,6 +177,7 @@ public:
 	int generateRoots();
 
 	int getVertexNum() const;
+	int getEdgeNum() const;
 
 	void print() const;
 	void print(const IdList &ids) const;

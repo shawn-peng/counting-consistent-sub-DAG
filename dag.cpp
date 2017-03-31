@@ -149,7 +149,7 @@ int Vertex::removeParent(int parent)
 	return 1;
 }
 
-int Vertex::getParentNum()
+int Vertex::getParentNum() const
 {
 	// this should be in constant length
 	return parents.size();
@@ -364,6 +364,16 @@ bool DAG::checkVertex(int id) const
 int DAG::getVertexNum() const
 {
 	return vertices.size();
+}
+
+int DAG::getEdgeNum() const
+{
+	int sum = 0;
+	FOR_EACH_IN_CONTAINER(iter, vertices)
+	{
+		sum += iter->getParentNum();
+	}
+	return sum;
 }
 
 int DAG::getVertexList(IdList &list) const
