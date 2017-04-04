@@ -12,6 +12,7 @@
 #include <errno.h>
 #include <assert.h>
 #include <string.h>
+#include <stdint.h>
 
 #include <iostream>
 #include <algorithm>
@@ -19,6 +20,7 @@
 #include <unordered_map>
 #include <sstream>
 #include <memory>
+#include <limits.h>
 
 #include <gmpxx.h>
 
@@ -1940,7 +1942,7 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 	{
 		total = count_consistent_subdag_tree(g);
 	}
-	else if (mpnodes.size() < 30)
+	else if (mpnodes.size() < 3)
 	{
 		total = count_consistent_subdag_for_independent_subdag_nonrecursive(g, using_hash);
 	}
