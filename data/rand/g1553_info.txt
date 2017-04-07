@@ -1,0 +1,9 @@
+number of edges: 114
+number of leaves: 2
+depth : 12
+number of MP nodes: 11
+in-degrees: 0 1 2 3 2 5 1 6 1 1 1 11 1 1 1 1 16 1 1 10 2 21 1 23 1 
+out-degrees: 12 9 9 7 7 6 7 6 7 5 5 3 4 3 4 5 3 3 3 2 2 1 1 0 0 
+
+Number of recursive calls: 14
+Total count: 1450
