@@ -260,6 +260,11 @@ int main(int argc, char **argv)
 
 	int depth = get_min_depth(g);
 
+	int sum_in = 0;
+	int sum_out = 0;
+	double avg_in;
+	double avg_out;
+
 	IdList mpnodes;
 	get_mpnodes(g, mpnodes);
 
@@ -278,6 +283,8 @@ int main(int argc, char **argv)
 		{// >= 10 all count as 10
 			in_degree_stat[10]++;
 		}
+		sum_in += id;
+
 		int od = g->getChildNum(*iter);
 		if (od < 10)
 		{
@@ -287,7 +294,10 @@ int main(int argc, char **argv)
 		{// >= 10 all count as 10
 			out_degree_stat[10]++;
 		}
+		sum_out += od;
 	}
+	avg_in = (double)sum_in / nv;
+	avg_out = (double)sum_out / nv;
 	//printf("in-degrees: ");
 	//FOR_EACH_IN_CONTAINER(iter, nodes)
 	//{
@@ -342,6 +352,8 @@ int main(int argc, char **argv)
 		printf("# of multi-parent vertices : %d\n", mpnodes.size());
 		printf("level : %d\n", level);
 		printf("depth : %d\n", depth);
+		printf("average in-degree : %0.4f\n", avg_in);
+		printf("average out-degree : %0.4f\n", avg_out);
 
 		printf("\n");
 		FOR_EACH_IN_CONTAINER(iter, in_degree_stat)
