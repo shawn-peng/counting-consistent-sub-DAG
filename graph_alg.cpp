@@ -2021,7 +2021,7 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 		DAG mA(*g), mD(*g);
 		int id = best_node;
 
-		printf("partitioning with MP node %d\n", id);
+		//printf("partitioning with MP node %d\n", id);
 		DAG ancestors, descendents;
 		get_path_to_root(g, id, ancestors);
 		mA.removeSubdag(ancestors);
@@ -2225,8 +2225,8 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 	// profiling
 	func_calls[__FUNCTION__]++;
 
-	printf("counting for:\n");
-	g->print();
+	//printf("counting for:\n");
+	//g->print();
 
 	DAG modified(*g);
 //	modified.copyVertexPrivData(*g);
@@ -2255,7 +2255,7 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 			hash_hits++;
 			//printf("Hash hit! (%d)\n", hash_hits);
 			//printf("Hashed count (%f)\n", pos->second);
-			cout << "Hashed count " << pos->second << endl;
+			//cout << "Hashed count " << pos->second << endl;
 			return pos->second;
 		}
 	}
@@ -2279,9 +2279,9 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 	// So we don't need to do anything
 	//decomp_subdags.reverse();
 
-	printf("decomposed subdags.\n");
-	modified.print();
-	print_subdag_list(decomp_subdags);
+	//printf("decomposed subdags.\n");
+	//modified.print();
+	//print_subdag_list(decomp_subdags);
 
 	ParentMap &parent_map = get_parent_info(&modified).parentMap;
 
@@ -2351,8 +2351,8 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 	//bool try_hash;
 	if (decomp_subdags.size() > 0)
 	{
-		printf("After regenerate.\n");
-		modified.print(print_privdata);
+		//printf("After regenerate.\n");
+		//modified.print(print_privdata);
 		// because we substituted a subdag to a vertex, now we can't only use the
 		// nodes of the regenerated dag as the hash key to store the count.
 		using_hash = false;
@@ -2362,7 +2362,7 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 	// get combination
 	number_t total = count_consistent_subdag_for_independent_subdag(&modified, using_hash);
 	//printf("the total is %f\n", total);
-	cout << "the total is " << total << endl;
+	//cout << "the total is " << total << endl;
 	//modified.print(print_privdata);
 
 
