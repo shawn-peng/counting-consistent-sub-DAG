@@ -17,6 +17,7 @@
 #include <iostream>
 #include <algorithm>
 #include <queue>
+#include <map>
 #include <unordered_map>
 #include <sstream>
 #include <memory>
@@ -1880,7 +1881,7 @@ number_t count_consistent_subdag_for_independent_subdag_nonrecursive(DAG *g, boo
 	return total;
 }
 
-pair<int, int> analyze_subproblem_scales(DAG *g, int id)
+pair<int, int> analyze_subproblem_scales_MPV(DAG *g, int id)
 {
 	DAG m1(*g), m2(*g);
 
@@ -1900,6 +1901,40 @@ pair<int, int> analyze_subproblem_scales(DAG *g, int id)
 	s2 = mpnodesD.size();
 
 	return make_pair(s1, s2);
+}
+
+pair<int, int> analyze_subproblem_scales_Bound(DAG *g, int id)
+{
+	DAG m1(*g), m2(*g);
+
+	DAG ancestors, descendents;
+	get_path_to_root(&m1, id, ancestors);
+	m1.removeSubdag(ancestors);
+	get_descendents_subdag(&m2, id, descendents);
+	m2.removeSubdag(descendents);
+	//m2.removeSubdagRootAt(id);
+
+	int s1, s2;
+	int e1, n1, r1;
+	int e2, n2, r2;
+
+	e1 = m1.getEdgeNum();
+	n1 = m1.getVertexNum();
+	r1 = m1.getRootNum();
+
+	e2 = m2.getEdgeNum();
+	n2 = m2.getVertexNum();
+	r2 = m2.getRootNum();
+
+	s1 = e1 + n1 + r1;
+	s2 = e2 + n2 + r2;
+
+	return make_pair(s1, s2);
+}
+
+bool comp_scale_pairs_sum(std::pair<int, int> s1, std::pair<int, int> s2)
+{
+	return ((long long)s1.first + s1.second) < ((long long)s2.first + s2.second);
 }
 
 // g(u), calculate the number of consistent sub-DAGs in a DAG g
@@ -1964,18 +1999,19 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 		}
 
 		pair<int, int> min_scales = make_pair(INT_MAX, INT_MAX);
+		//int min_scales = INT_MAX;
 		int best_node = 0;
 		// find the best node to split count
 		FOR_EACH_IN_CONTAINER(iter, mpnodes)
 		{
 			int vid = *iter;
-			pair<int, int> scales = analyze_subproblem_scales(g, vid);
-			if (scales.first < scales.second)
-			{
-				swap(scales.first, scales.second);
-			}
+			pair<int, int> scales = analyze_subproblem_scales_Bound(g, vid);
+			//if (scales.first < scales.second)
+			//{
+			//	swap(scales.first, scales.second);
+			//}
 
-			if (scales < min_scales)
+			if (comp_scale_pairs_sum(scales, min_scales))
 			{
 				min_scales = scales;
 				best_node = vid;
