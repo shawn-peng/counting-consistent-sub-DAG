@@ -380,6 +380,11 @@ int DAG::getEdgeNum() const
 	return sum;
 }
 
+int DAG::getRootNum() const
+{
+	return roots.size();
+}
+
 int DAG::getMultiParentVertices(IdList &list) const
 {
 	FOR_EACH_IN_CONTAINER(iter, vertices)

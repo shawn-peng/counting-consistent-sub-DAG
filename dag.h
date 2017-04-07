@@ -181,6 +181,7 @@ public:
 
 	int getVertexNum() const;
 	int getEdgeNum() const;
+	int getRootNum() const;
 
 	void print() const;
 	void print(const IdList &ids) const;
