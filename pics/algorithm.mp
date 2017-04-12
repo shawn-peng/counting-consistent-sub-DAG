@@ -72,7 +72,9 @@ beginfig(1);
     draw p5 cutbefore p0 withpen pencircle scaled 2 dashed evenly;
     draw p6 cutbefore p0 withpen pencircle scaled 2 dashed evenly;
 
+    pickup pencircle scaled 1.25;
     drawboxed(a0, b0, c0, d0, e0, f0, g0, h0, i0, j0, k0, l0, u0);
+    pickup pencircle scaled 1;
     link(a0, b0);
     link(a0, c0);
     link(b0, d0);
@@ -125,7 +127,9 @@ beginfig(1);
     k1.c - k0.c = width;
     l1.c - l0.c = width;
 
+    pickup pencircle scaled 1.25;
     drawboxed(a1, b1, c1, d1, h1, i1, j1, k1, l1);
+    pickup pencircle scaled 1;
     link(a1, b1);
     link(a1, c1);
     link(b1, d1);
@@ -167,7 +171,9 @@ beginfig(1);
     k2.c - k0.c = 2width;
     l2.c - l0.c = 2width;
 
+    pickup pencircle scaled 1.25;
     drawboxed(e2, f2, g2, h2, i2, j2, k2, l2);
+    pickup pencircle scaled 1;
     link(e2, g2);
     link(f2, g2);
     link(h2, i2);
