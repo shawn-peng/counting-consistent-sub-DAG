@@ -41,8 +41,9 @@ log*
 *.pdf
 *.bak
 
-# metapost
+# pics and metapost
 pics/*.eps
 pics/*.pdf
 pics/*.mpx
 pics/mpxerr.tex
+pics/*.png

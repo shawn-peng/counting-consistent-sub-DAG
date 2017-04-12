@@ -137,7 +137,7 @@ beginfig(1);
     link(h1, j1);
     link(k1, l1);
 
-    label(btex \fbox{without $u$} etex, d1.c-(0,2diamondy));
+    label(btex \fbox{without $\mathcal{D}^+(u)$} etex, d1.c-(0,2diamondy));
 
     %%%%%%%%%%%%% fig 3
     circleit.e2(btex $e$ etex);
@@ -175,7 +175,7 @@ beginfig(1);
     link(k2, f2);
     link(k2, l2);
 
-    label(btex \fbox{with $u$} etex, .5[h2.c,k2.c]+(0,diamondy));
+    label(btex \fbox{without $\mathcal{A}^+(u)$} etex, .5[h2.c,k2.c]+(0,diamondy));
 
     %%
     z0 = (xpart(i0.w), ypart(a0.n));
