@@ -47,3 +47,7 @@ pics/*.pdf
 pics/*.mpx
 pics/mpxerr.tex
 pics/*.png
+
+# toy
+toy/cdag
+toy/simdag
