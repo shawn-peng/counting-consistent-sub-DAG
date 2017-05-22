@@ -774,6 +774,7 @@ void DAG::reverse()
 	{
 		iter->reverse();
 	}
+	generateRoots();
 }
 
 int DAG::removeVertex(int id)
