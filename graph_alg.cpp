@@ -82,14 +82,6 @@ void print_subdag_list(const list<DAG> &glist, ConstPrivDataFn fn)
 	}
 }
 
-void print_edge_list(const EdgeList &edgelist)
-{
-	FOR_EACH_IN_CONTAINER(elit, edgelist)
-	{
-		printf("%07d-->%07d\n", elit->vstart, elit->vend);
-	}
-}
-
 void print_id_list(const IdList &list)
 {
 	FOR_EACH_IN_CONTAINER(iter, list)
@@ -1050,6 +1042,8 @@ int decompose_dag(DAG *g, const IdList &mpnodes, list<DAG> &subdags)
 
 
 // sanity check method
+typedef pair<int, int> Edge;
+typedef list<Edge> EdgeList;
 int enum_possibilities(DAG *g, DAG cur_subdag, list<Edge> fringe, IdList needed, list<DAG> &all_subdags)
 {
 	int ret;
@@ -1067,7 +1061,7 @@ int enum_possibilities(DAG *g, DAG cur_subdag, list<Edge> fringe, IdList needed,
 	Edge edge = fringe.front();
 	fringe.pop_front();
 
-	int vid = edge.vend;
+	int vid = edge.second;
 
 	//not choosing this vertex
 
@@ -1112,7 +1106,7 @@ int enum_possibilities(DAG *g, DAG cur_subdag, list<Edge> fringe, IdList needed,
 	{
 		cur_subdag.addVertex(vid);
 		//just add one Edge
-		cur_subdag.addEdge(edge.vstart, vid);
+		cur_subdag.addEdge(edge.first, vid);
 	}
 
 	//print_id_list(needed);

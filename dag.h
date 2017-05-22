@@ -20,16 +20,7 @@ using namespace std;
 namespace NS_DAG
 {
 
-struct Edge
-{
-	int vstart;
-	int vend;
-	Edge(int vs,int ve):vstart(vs), vend(ve){}
-};
-
 typedef list<int> IdList;
-
-typedef list<Edge> EdgeList;
 
 enum DataTypeEnum
 {
@@ -51,7 +42,6 @@ typedef int (*ConstPrivDataFn)(const PrivDataUnion *);
 struct PrivDataUnion
 {
 	DataTypeEnum type;
-	//PrivDataFn destroy;
 	union DataUnion
 	{
 		long long dlonglong;
@@ -59,10 +49,8 @@ struct PrivDataUnion
 		int dint;
 		float dfloat;
 		double ddouble;
-		//shared_ptr<void> dptr;
 
 		DataUnion();
-		//~DataUnion();
 	} _data;
 
 	long long &dlonglong;
@@ -71,8 +59,6 @@ struct PrivDataUnion
 	float &dfloat;
 	double &ddouble;
 	shared_ptr<void> dptr;
-	//shared_ptr<void> &dptr;
-	//void *&dptr;
 
 	PrivDataUnion();
 	PrivDataUnion(const PrivDataUnion &);
@@ -84,8 +70,7 @@ class Vertex
 {
 private:
 	int id;
-	list<Edge> edges;
-	typedef EdgeList::iterator EdgeIter;
+	IdList children;
 	IdList parents;
 	PrivDataUnion privdata;
 public:
@@ -95,9 +80,9 @@ public:
 	int getId() const;
 	void print(int depth) const;
 	void printId() const;
-	void addEdge(int vstart, int vend);
+	void addChild(int id);
 	void addParent(int id);
-	int removeEdge(int vend);
+	int removeChild(int parent);
 	int removeParent(int parent);
 	int getParentNum() const;
 	int getParentList(IdList &list) const;
@@ -196,14 +181,18 @@ public:
 	//int merge(const DAG &other, DAG &dest); //
 
 	int removeVertex(int id);
+
 	int removeEdge(int idstart, int idend);
+
 	// remove the subdag with root whose id is rootid
 	// the subdag must be a tree
 	int removeSubdagRootAt(int rootid, DAG &subdag);
+
 	// remove the subdag with given roots
 	int removeSubdagRootAt(const IdList &roots, DAG &subdag);
 
 	// remove the exact subdag
+	// dag remain unchanged if some node is missing
 	int removeSubdag(const DAG &subdag);
 
 	//check if the subdag with rootid is a tree
