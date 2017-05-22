@@ -32,6 +32,9 @@ log*
 .cproject
 .project
 .settings
+*.tmp
+*.lock
+*.log
 
 # LaTeX
 *.aux
