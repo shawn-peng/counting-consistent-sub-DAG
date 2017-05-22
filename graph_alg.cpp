@@ -1972,6 +1972,9 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 	IdList mpnodes;
 	g->getMultiParentVertices(mpnodes);
 
+	IdList nodes;
+	g->getVertexList(nodes);
+
 	if (mpnodes.size() == 0)
 	{
 		total = count_consistent_subdag_tree(g);
@@ -1996,7 +1999,8 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 		//int min_scales = INT_MAX;
 		int best_node = 0;
 		// find the best node to split count
-		FOR_EACH_IN_CONTAINER(iter, mpnodes)
+		//FOR_EACH_IN_CONTAINER(iter, mpnodes)
+		FOR_EACH_IN_CONTAINER(iter, nodes)
 		{
 			int vid = *iter;
 			pair<int, int> scales = analyze_subproblem_scales_Bound(g, vid);
