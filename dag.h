@@ -89,6 +89,8 @@ public:
 	int getChildNum() const;
 	void getChildList(IdList &list) const;
 
+	void reverse();
+
 	void setPrivData(const PrivDataUnion &data);
 	PrivDataUnion &getPrivData();
 	const PrivDataUnion &getPrivData() const;
@@ -177,6 +179,9 @@ public:
 	void printSubdag(const Vertex &v, int depth, ConstPrivDataFn fn) const;
 	void printVertexes(ConstPrivDataFn fn = 0) const;
 	void printEdges() const;
+
+	// reverse all directions
+	void reverse();
 
 	//int merge(const DAG &other, DAG &dest); //
 

@@ -173,6 +173,12 @@ void Vertex::getChildList(IdList &list) const
 	}
 	return;
 }
+
+void Vertex::reverse()
+{
+	swap(children, parents);
+}
+
 void Vertex::setPrivData(const PrivDataUnion &data)
 {
 	privdata = data;
@@ -760,6 +766,14 @@ void DAG::printEdges() const
 		}
 	}
 	return;
+}
+
+void DAG::reverse()
+{
+	FOR_EACH_IN_CONTAINER(iter, vertices)
+	{
+		iter->reverse();
+	}
 }
 
 int DAG::removeVertex(int id)
