@@ -505,6 +505,7 @@ bool DAG::isRoot(int id) const
 int DAG::generateRoots()
 {
 	int cnt = 0;
+	roots.clear();
 	FOR_EACH_IN_CONTAINER(iter, vindex)
 	{
 		if (iter->second->getParentNum() == 0)
