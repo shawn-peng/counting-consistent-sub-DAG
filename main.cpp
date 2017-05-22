@@ -63,6 +63,8 @@ int main(int argc, char *argv[])
 			printf("DAG with virtual root:\n");
 			new_g.print();
 			ret = get_consistent_subdag(&new_g, 0, subdags);
+			// remove the subdag with only the virtual root
+			subdags.pop_front();
 		}
 	}
 
@@ -81,7 +83,7 @@ int main(int argc, char *argv[])
 	//printf("Num of consistent sub-DAG: %.0f\n", num);
 	cout << "Num of consistent sub-DAG: " << num << endl;
 
-	printf("(Sanity check)Num of consistent sub-DAG: %d\n", subdags.size() - 1);
+	printf("(Sanity check)Num of consistent sub-DAG: %d\n", subdags.size());
 
 	graph_alg_print_stats();
 
