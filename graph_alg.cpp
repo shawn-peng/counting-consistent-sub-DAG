@@ -1926,6 +1926,64 @@ pair<int, int> analyze_subproblem_scales_Bound(DAG *g, int id)
 	return make_pair(s1, s2);
 }
 
+pair<int, int> analyze_subproblem_scales_Bound_double_direction(DAG *g, int id, pair<DAG, DAG> &subprobs)
+{
+	DAG m1(*g), m2(*g);
+
+	DAG ancestors, descendents;
+	get_path_to_root(&m1, id, ancestors);
+	m1.removeSubdag(ancestors);
+	get_descendents_subdag(&m2, id, descendents);
+	m2.removeSubdag(descendents);
+	//m2.removeSubdagRootAt(id);
+
+	int s1, s2;
+	int e1, n1, r1;
+	int e2, n2, r2;
+
+	e1 = m1.getEdgeNum();
+	n1 = m1.getVertexNum();
+	r1 = m1.getRootNum();
+
+	e2 = m2.getEdgeNum();
+	n2 = m2.getVertexNum();
+	r2 = m2.getRootNum();
+
+	s1 = e1 + n1 + r1;
+	s2 = e2 + n2 + r2;
+
+	int rs1, rs2;
+
+	DAG rm1(m1), rm2(m2);
+	rm1.reverse();
+	rm2.reverse();
+
+	r1 = rm1.getRootNum();
+	r2 = rm2.getRootNum();
+
+	rs1 = e1 + n1 + r1;
+	rs2 = e2 + n2 + r2;
+
+	if (s1 < rs1)
+	{
+		subprobs.first = m1;
+	}
+	else
+	{
+		subprobs.first = rm1;
+	}
+	if (s2 < rs2)
+	{
+		subprobs.second = m2;
+	}
+	else
+	{
+		subprobs.second = rm2;
+	}
+
+	return make_pair(min(s1,rs1), min(s2,rs2));
+}
+
 bool comp_scale_pairs_sum(std::pair<int, int> s1, std::pair<int, int> s2)
 {
 	return ((long long)s1.first + s1.second) < ((long long)s2.first + s2.second);
@@ -1995,11 +2053,15 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 		pair<int, int> min_scales = make_pair(INT_MAX, INT_MAX);
 		//int min_scales = INT_MAX;
 		int best_node = 0;
+		pair<DAG, DAG> best_subs_problems;
 		// find the best node to split count
 		FOR_EACH_IN_CONTAINER(iter, mpnodes)
 		{
 			int vid = *iter;
-			pair<int, int> scales = analyze_subproblem_scales_Bound(g, vid);
+			pair<DAG, DAG> temp_subs_problems;
+			pair<int, int> scales =
+				analyze_subproblem_scales_Bound_double_direction(
+						g, vid, temp_subs_problems);
 			//if (scales.first < scales.second)
 			//{
 			//	swap(scales.first, scales.second);
@@ -2009,20 +2071,23 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 			{
 				min_scales = scales;
 				best_node = vid;
+				best_subs_problems = temp_subs_problems;
 			}
 		}
 
-		DAG mA(*g), mD(*g);
+		//DAG mA(*g), mD(*g);
 		int id = best_node;
 
 		//printf("partitioning with MP node %d\n", id);
-		DAG ancestors, descendents;
-		get_path_to_root(g, id, ancestors);
-		mA.removeSubdag(ancestors);
-		get_descendents_subdag(g, id, descendents);
-		mD.removeSubdag(descendents);
+		//DAG ancestors, descendents;
+		//get_path_to_root(g, id, ancestors);
+		//mA.removeSubdag(ancestors);
+		//get_descendents_subdag(g, id, descendents);
+		//mD.removeSubdag(descendents);
 
 		IdList roots1, roots2;
+		DAG &mA = best_subs_problems.first;
+		DAG &mD = best_subs_problems.second;
 		mA.getRootList(roots1);
 		mD.getRootList(roots2);
 		number_t num1 = count_consistent_subdag(&mA, roots1, using_hash);
