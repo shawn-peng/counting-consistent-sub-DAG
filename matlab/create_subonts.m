@@ -5,15 +5,15 @@
 
 % output folder:
 odir = '~/Projects/cdag/data/ontologies/levels';
-ontstr = 'bpo';
+ontstr = 'hpo';
 prefix = 'used'; % 'all' or 'used'
 
 L = pfp_level(ont); % full levels
 for l = 1 : L
     fprintf('level: %d\n', l);
-    filename = fullfile(odir, ontstr, sprintf('%s_%s%d.txt', ontstr, prefix, l));
-    fterm    = fullfile(odir, ontstr, sprintf('%s_%s%d_term.txt', ontstr, prefix, l));
-    frel     = fullfile(odir, ontstr, sprintf('%s_%s%d_rel.txt', ontstr, prefix, l));
+    filename = fullfile(odir, ontstr, sprintf('%s_%s%d.txt', prefix, ontstr, l));
+    fterm    = fullfile(odir, ontstr, sprintf('%s_%s%d_term.txt', prefix, ontstr, l));
+    frel     = fullfile(odir, ontstr, sprintf('%s_%s%d_rel.txt', prefix, ontstr, l));
     subont = level_n_subont(ont, l);
     pfp_saveont(filename, subont);
 
@@ -33,4 +33,4 @@ clear odir ontstr prefix L l filename subont
 % Yuxiang Jiang (yuxjiang@indiana.edu)
 % Department of Computer Science
 % Indiana University, Bloomington
-% Last modified: Thu 25 May 2017 12:20:35 PM E
+% Last modified: Thu 25 May 2017 02:48:05 PM E
