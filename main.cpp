@@ -40,8 +40,9 @@ int main(int argc, char *argv[])
 	printf("Vertices: %d\n", g->getVertexNum());
 	//g->print(988);
 	list<DAG> subdags;
-	if (g->getVertexNum() <= 35)
-	//if (0)
+	number_t check_num;
+	//if (g->getVertexNum() <= 35)
+	if (0)
 	{
 		if (rootlist.size() == 1)
 		{
@@ -63,7 +64,19 @@ int main(int argc, char *argv[])
 			printf("DAG with virtual root:\n");
 			new_g.print();
 			ret = get_consistent_subdag(&new_g, 0, subdags);
+			// remove the subdag with only the virtual root
+			subdags.pop_front();
 		}
+		check_num = subdags.size();
+	}
+	else
+	{
+		DAG rg(*g);
+		rg.reverse();
+		IdList rroots;
+		rg.getRootList(rroots);
+		check_num = count_consistent_subdag(&rg, rroots);
+		graph_alg_clear_hash();
 	}
 
 	//reduce_dag(g);
@@ -81,9 +94,11 @@ int main(int argc, char *argv[])
 	//printf("Num of consistent sub-DAG: %.0f\n", num);
 	cout << "Num of consistent sub-DAG: " << num << endl;
 
-	printf("(Sanity check)Num of consistent sub-DAG: %d\n", subdags.size() - 1);
+	//printf("(Sanity check)Num of consistent sub-DAG: %d\n", subdags.size());
+	cout << "(Sanity check)Num of consistent sub-DAG: " << check_num << endl;
 
 	graph_alg_print_stats();
+	graph_alg_clear_hash();
 
 	free_dag(g);
 	return 0;

@@ -24,9 +24,6 @@ PrivDataUnion::DataUnion::DataUnion() :
 	dlonglong(0)
 {}
 
-//PrivDataUnion::DataUnion::~DataUnion()
-//{}
-
 PrivDataUnion::PrivDataUnion() :
 	type(DT_EMPTY),
 	dlonglong(_data.dlonglong),
@@ -35,7 +32,6 @@ PrivDataUnion::PrivDataUnion() :
 	dfloat(_data.dfloat),
 	ddouble(_data.ddouble),
 	dptr()
-	//dptr(_data.dptr)
 {}
 
 PrivDataUnion::PrivDataUnion(const PrivDataUnion &o) :
@@ -52,49 +48,13 @@ PrivDataUnion::PrivDataUnion(const PrivDataUnion &o) :
 
 PrivDataUnion &PrivDataUnion::operator =(const PrivDataUnion &o)
 {
-	//if (type == DT_POINTER)
-	//{
-	//	//(*destroy)(this);
-	//	dptr = NULL;
-	//}
 	type = o.type;
 	_data = o._data;
 	dptr = o.dptr;
-	//switch (type)
-	//{
-	//	case DT_EMPTY:
-	//		dlonglong = 0;
-	//		break;
-	//	case DT_LONGLONG:
-	//		dlonglong = o.dlonglong;
-	//		break;
-	//	case DT_LONG:
-	//		dlong = o.dlong;
-	//		break;
-	//	case DT_INT:
-	//		dint = o.dint;
-	//		break;
-	//	case DT_FLOAT:
-	//		dfloat = o.dfloat;
-	//		break;
-	//	case DT_DOUBLE:
-	//		ddouble = o.ddouble;
-	//		break;
-	//	case DT_POINTER:
-	//		dptr = o.dptr;
-	//		break;
-	//	default:
-	//		assert(0);
-	//		break;
-	//}
 }
 
 PrivDataUnion::~PrivDataUnion()
 {
-	//if (type == DT_POINTER)
-	//{
-	//	//(*destroy)(this);
-	//}
 }
 
 Vertex::Vertex(int vid) : id(vid)
@@ -104,7 +64,6 @@ Vertex::Vertex(int vid) : id(vid)
 Vertex::Vertex(const Vertex &other)
 {
 	*this = other;
-	//privdata.dptr = NULL;
 }
 
 int Vertex::getId() const
@@ -112,24 +71,25 @@ int Vertex::getId() const
 	return id;
 }
 
-void Vertex::addEdge(int vstart, int vend)
+void Vertex::addChild(int id)
 {
-	edges.push_back(Edge(vstart,vend));
+	children.push_back(id);
 	return;
 }
 
 void Vertex::addParent(int id)
 {
 	parents.push_back(id);
+	return;
 }
 
-int Vertex::removeEdge(int vend)
+int Vertex::removeChild(int child)
 {
-	FOR_EACH_IN_CONTAINER(iter, edges)
+	FOR_EACH_IN_CONTAINER(iter, children)
 	{
-		if (iter->vend == vend)
+		if (*iter == child)
 		{
-			edges.erase(iter);
+			children.erase(iter);
 			return 0;
 		}
 	}
@@ -169,7 +129,7 @@ void Vertex::print(int depth) const
 		printf("\n");
 	}
 
-	if (!edges.empty())
+	if (!children.empty())
 	{
 		printf("--");
 	}
@@ -180,9 +140,9 @@ void Vertex::print(int depth) const
 	//for (int i = 0; i < depth; i++)
 	//{
 	//	printf("|--%d
-	FOR_EACH_IN_CONTAINER(iter, edges)
+	FOR_EACH_IN_CONTAINER(iter, children)
 	{
-		printf("|--%07d\n",iter->vend);
+		printf("|--%07d\n", *iter);
 	}
 
 	return;
@@ -203,16 +163,22 @@ void Vertex::printId() const
 
 int Vertex::getChildNum() const
 {
-	return edges.size();
+	return children.size();
 }
 void Vertex::getChildList(IdList &list) const
 {
-	FOR_EACH_IN_CONTAINER(iter, edges)
+	FOR_EACH_IN_CONTAINER(iter, children)
 	{
-		list.push_back(iter->vend);
+		list.push_back(*iter);
 	}
 	return;
 }
+
+void Vertex::reverse()
+{
+	swap(children, parents);
+}
+
 void Vertex::setPrivData(const PrivDataUnion &data)
 {
 	privdata = data;
@@ -280,7 +246,7 @@ int DAG::addEdge(int vstart, int vend)
 		return -1;
 	}
 
-	vsi->second->addEdge(vstart, vend);
+	vsi->second->addChild(vend);
 	vei->second->addParent(vstart);
 
 	return 0;
@@ -539,6 +505,7 @@ bool DAG::isRoot(int id) const
 int DAG::generateRoots()
 {
 	int cnt = 0;
+	roots.clear();
 	FOR_EACH_IN_CONTAINER(iter, vindex)
 	{
 		if (iter->second->getParentNum() == 0)
@@ -802,6 +769,15 @@ void DAG::printEdges() const
 	return;
 }
 
+void DAG::reverse()
+{
+	FOR_EACH_IN_CONTAINER(iter, vertices)
+	{
+		iter->reverse();
+	}
+	generateRoots();
+}
+
 int DAG::removeVertex(int id)
 {
 	VertexMapIter miter = vindex.find(id);
@@ -823,7 +799,7 @@ int DAG::removeVertex(int id)
 	FOR_EACH_IN_CONTAINER(pit, parents)
 	{
 		Vertex *vp = findVertex(*pit);
-		vp->removeEdge(id);
+		vp->removeChild(id);
 	}
 
 	//remove from roots
@@ -866,7 +842,7 @@ int DAG::removeEdge(int idstart, int idend)
 		printf("Error in %s(): id:%07d not found.\n", __FUNCTION__, idstart);
 		exit(1);
 	}
-	v->removeEdge(idend);
+	v->removeChild(idend);
 
 	v = findVertex(idend);
 	if (v == NULL)
@@ -929,7 +905,6 @@ int DAG::removeSubdagRootAt(const IdList &subroots, DAG &subdag)
 }
 
 
-// dag remain unchanged if some node is missing
 int DAG::removeSubdag(const DAG& subdag)
 {
 	//check all nodes present in current dag
@@ -954,25 +929,14 @@ int DAG::removeSubdag(const DAG& subdag)
 		}
 	}
 
+	// Because when we remove a vertex from a dag, we will
+	// ensure to remove the relationships from its parents and children
+	// so we just need to remove nodes from the dag
+	// However, this is not the best way to do this
 	FOR_EACH_IN_CONTAINER(viter, subdag.vertices)
 	{
 		int id = viter->getId();
 		const Vertex *v = findVertex(id);
-		IdList children;
-		v->getChildList(children);
-//		FOR_EACH_IN_CONTAINER(chit, children)
-//		{
-//			int child = *chit;
-//			if (!subdag.checkVertex(child))
-//			{
-//				removeEdge(id, child);
-//				Vertex *vchild = findVertex(child);
-//				if (vchild->getParentNum() == 0)
-//				{
-//					addToRootList(child);
-//				}
-//			}
-//		}
 
 		removeVertex(id);
 	}

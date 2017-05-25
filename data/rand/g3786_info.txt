@@ -1,9 +1,28 @@
-number of edges: 96
-number of leaves: 1
-depth : 10
-number of MP nodes: 13
-in-degrees: 0 1 1 1 4 1 1 7 1 1 1 1 3 4 2 2 2 4 1 19 14 1 2 12 10 
-out-degrees: 13 9 5 9 8 4 5 2 5 3 1 5 3 3 4 5 1 2 2 3 1 1 1 1 0 
+# of vertices : 25
+# of edges: 96
+# of multi-parent vertices : 13
+level : 10
+depth : 4
+average in-degree : 3.8400
+average out-degree : 3.8400
 
-Number of recursive calls: 16
+# of vertices having in-degree=0 : 1
+# of vertices having in-degree=1 : 11
+# of vertices having in-degree=2 : 4
+# of vertices having in-degree=3 : 1
+# of vertices having in-degree=4 : 3
+# of vertices having in-degree=7 : 1
+# of vertices having in-degree>=10 : 4
+
+# of vertices having out-degree=0 : 1
+# of vertices having out-degree=1 : 6
+# of vertices having out-degree=2 : 3
+# of vertices having out-degree=3 : 4
+# of vertices having out-degree=4 : 2
+# of vertices having out-degree=5 : 5
+# of vertices having out-degree=8 : 1
+# of vertices having out-degree=9 : 2
+# of vertices having out-degree>=10 : 1
+
+Number of recursive calls: 18
 Total count: 3658
