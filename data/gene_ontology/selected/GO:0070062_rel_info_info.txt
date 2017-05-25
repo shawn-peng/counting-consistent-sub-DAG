@@ -1,9 +1,0 @@
-number of leaves: 0
-depth : 0
-number of MP nodes: 0
-
-
-
-Time used:
-Number of recursive calls: 1
-Total count: 0

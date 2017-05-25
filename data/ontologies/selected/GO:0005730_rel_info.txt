@@ -1,0 +1,61 @@
+number of leaves: 22
+depth : 4
+number of MP nodes: 5
+
+node 0000120 has 1 parent(s)
+node 0000500 has 1 parent(s)
+node 0001650 has 1 parent(s)
+node 0001651 has 1 parent(s)
+node 0001652 has 1 parent(s)
+node 0005655 has 2 parent(s)
+node 0005668 has 1 parent(s)
+node 0005730 has 0 parent(s)
+node 0005731 has 1 parent(s)
+node 0005736 has 1 parent(s)
+node 0030685 has 2 parent(s)
+node 0030869 has 1 parent(s)
+node 0030874 has 1 parent(s)
+node 0030875 has 2 parent(s)
+node 0031428 has 1 parent(s)
+node 0031429 has 1 parent(s)
+node 0034388 has 1 parent(s)
+node 0034455 has 1 parent(s)
+node 0034456 has 1 parent(s)
+node 0034457 has 1 parent(s)
+node 0044452 has 1 parent(s)
+node 0061773 has 2 parent(s)
+node 0070545 has 1 parent(s)
+node 0070860 has 1 parent(s)
+node 0097424 has 1 parent(s)
+node 0101019 has 2 parent(s)
+
+node 0000120 has 3 children
+node 0000500 has 0 children
+node 0001650 has 0 children
+node 0001651 has 0 children
+node 0001652 has 0 children
+node 0005655 has 0 children
+node 0005668 has 0 children
+node 0005730 has 5 children
+node 0005731 has 0 children
+node 0005736 has 0 children
+node 0030685 has 0 children
+node 0030869 has 0 children
+node 0030874 has 3 children
+node 0030875 has 0 children
+node 0031428 has 0 children
+node 0031429 has 0 children
+node 0034388 has 0 children
+node 0034455 has 0 children
+node 0034456 has 0 children
+node 0034457 has 0 children
+node 0044452 has 19 children
+node 0061773 has 0 children
+node 0070545 has 0 children
+node 0070860 has 0 children
+node 0097424 has 0 children
+node 0101019 has 0 children
+
+Time used: 0m0.005s
+Number of recursive calls: 6
+Total count: 5308417
