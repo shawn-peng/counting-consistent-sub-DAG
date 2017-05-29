@@ -360,7 +360,7 @@ void freePathInfo(void *ptr)
 int free_nodes_pathinfo(DAG *g)
 {
 	IdList fringe;
-	//int rootid = g->getRoot();
+	//int rootid = g->getFirstRoot();
 	//fringe.push_back(rootid);
 	g->getRootList(fringe);
 
@@ -520,7 +520,7 @@ int get_path_to_root(DAG *g, int id, DAG &subdag)
 //int get_path_to_root(DAG *g, int id, DAG &subdag)
 //{
 //	// may need several path
-//	//int rootid = g->getRoot();
+//	//int rootid = g->getFirstRoot();
 //
 //	Vertex *v = subdag.findVertex(id);
 //	subdag.addVertex(id);
@@ -569,7 +569,7 @@ int get_path_to_root_with_exclusion(DAG *g, int id,
 		const IdList &exclude, DAG &subdag)
 {
 	// may need several path
-	//int rootid = g->getRoot();
+	//int rootid = g->getFirstRoot();
 
 	Vertex *v = subdag.findVertex(id); // here we want to see if v exists already
 	subdag.addVertex(id);
@@ -629,7 +629,7 @@ int add_path_to_pathmap(DAG *g, int targetid, const DAG &pathdag)
 {
 	IdList fringe;
 
-	//int rootid = g->getRoot();
+	//int rootid = g->getFirstRoot();
 	//fringe.push_back(rootid);
 
 	pathdag.getRootList(fringe);
@@ -673,7 +673,7 @@ int add_path_to_pathmap(DAG *g, int targetid, const DAG &pathdag)
 int gen_mpnode_pathinfo(DAG *g, IdList mpnodes)
 {
 	IdList fringe;
-	//int rootid = g->getRoot();
+	//int rootid = g->getFirstRoot();
 	//fringe.push_back(rootid);
 	IdList roots;
 	g->getRootList(roots);
@@ -947,7 +947,7 @@ int decompose_dag(DAG *g, const IdList &mpnodes, list<DAG> &subdags)
 	// profiling
 	func_calls[__FUNCTION__]++;
 
-	//int realroot = g->getRoot();
+	//int realroot = g->getFirstRoot();
 	IdList realroots;
 	g->getRootList(realroots);
 	IdList removed_mpnodes;
@@ -1253,11 +1253,7 @@ int remove_subdag_to_become_trees(DAG *g, int rootid, list<DAG> &subdags)
 //for tree case
 number_t count_consistent_subdag_tree(DAG *g, int rootid)
 {
-	IdList children;
-	Vertex *v = g->findVertex(rootid);
-	assert(v);
-	//number_t total = v->getPrivData().ddouble;
-	PrivDataUnion data = v->getPrivData();
+	PrivDataUnion data = g->getPrivData(rootid);
 	number_t total = getNumFromPrivData(data);
 	if (total == 0)
 	{
@@ -1267,8 +1263,12 @@ number_t count_consistent_subdag_tree(DAG *g, int rootid)
 	{
 		assert(0);
 	}
+	else
+	{
+	}
 
 	number_t num = 1;
+	IdList children;
 	g->getChildList(rootid, children);
 	FOR_EACH_IN_CONTAINER(iter, children)
 	{
@@ -1449,10 +1449,10 @@ number_t count_consistent_subdag_adding_subdag(DAG *g, IdList mpnodes, const DAG
 
 	// the root of subdag must be choosen(fixed)
 
-	//int rootid = g->getRoot();
+	//int rootid = g->getFirstRoot();
 
 	// even for multi-root DAG case, the subdag still have only one root
-	int srid = subdag.getRoot();
+	int srid = subdag.getFirstRoot();
 	DAG pathdag;
 	get_path_to_root(g, srid, pathdag);
 	//pathdag.setRoot(rootid);
@@ -1524,7 +1524,7 @@ number_t count_consistent_subdag_for_independent_subdag_nonrecursive(DAG *g, boo
 	//{
 	//	printf("the independent subdag have more than one root.\n");
 	//}
-//	int rootid = g->getRoot();
+//	int rootid = g->getFirstRoot();
 	list<DAG> extend_subdags;
 
 	DAG modified(*g);
@@ -1571,7 +1571,7 @@ number_t count_consistent_subdag_for_independent_subdag_nonrecursive(DAG *g, boo
 	while (!extend_subdags.empty())
 	{
 		DAG &subdag = extend_subdags.front();
-		int srid = subdag.getRoot();
+		int srid = subdag.getFirstRoot();
 
 		if (!check_parent(&modified, srid, parent_map))
 		{
@@ -1856,7 +1856,25 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 		mA.getRootList(roots1);
 		mD.getRootList(roots2);
 		number_t num1 = count_consistent_subdag(&mA, roots1, using_hash);
+		DAG rmA(mA);
+		rmA.reverse();
+		rmA.getRootList(roots1);
+		number_t num1_c = count_consistent_subdag(&rmA, roots1, using_hash);
+		if (num1 != num1_c)
+		{
+			printf("find BUG.\n");
+			assert(0);
+		}
 		number_t num2 = count_consistent_subdag(&mD, roots2, using_hash);
+		DAG rmD(mD);
+		rmD.reverse();
+		rmD.getRootList(roots2);
+		number_t num2_c = count_consistent_subdag(&rmD, roots2, using_hash);
+		if (num2 != num2_c)
+		{
+			printf("find BUG.\n");
+			assert(0);
+		}
 
 		total = num1 + num2;
 	}
@@ -1964,7 +1982,7 @@ number_t count_consistent_subdag(DAG *g, int rootid, bool using_hash)
 		//subdag->printEdges();
 
 		// the subdag can have only one parent, that's how we decomposed
-		int srid = subdag->getRoot();
+		int srid = subdag->getFirstRoot();
 
 		//number_t num = count_consistent_subdag_for_independent_subdag(subdag);
 		number_t num = count_consistent_subdag(subdag, srid);

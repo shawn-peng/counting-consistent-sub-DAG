@@ -257,7 +257,7 @@ int DAG::addDAGAsChildOf(int parent, const DAG &other)
 {
 	DAG tmpdag(other);
 
-	int otherroot = other.getRoot();
+	int otherroot = other.getFirstRoot();
 	transferSubdag(tmpdag, *this, otherroot);
 
 	int ret = addEdge(parent,otherroot);
@@ -275,7 +275,7 @@ int DAG::addDAGAsChildOf(const IdList &parents, const DAG &other)
 {
 	DAG tmpdag(other);
 
-	int otherroot = other.getRoot();
+	int otherroot = other.getFirstRoot();
 	transferSubdag(tmpdag, *this, otherroot);
 
 	int ret;
@@ -295,7 +295,7 @@ int DAG::addDAGAsChildOf(const IdList &parents, const DAG &other)
 
 int DAG::transplantAsChildOf(const IdList &parents, DAG &other)
 {
-	int otherroot = other.getRoot();
+	int otherroot = other.getFirstRoot();
 	transferSubdag(other, *this, otherroot);
 
 	int ret;
@@ -455,7 +455,7 @@ void DAG::setRoot(int id)
 	return;
 }
 
-int DAG::getRoot() const
+int DAG::getFirstRoot() const
 {
 	return roots.front();
 }
