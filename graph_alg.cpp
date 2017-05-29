@@ -1259,22 +1259,23 @@ number_t count_consistent_subdag_tree(DAG *g, int rootid)
 	//number_t total = v->getPrivData().ddouble;
 	PrivDataUnion data = v->getPrivData();
 	number_t total = getNumFromPrivData(data);
-	if (total != 0)
+	if (total == 0)
 	{
-		//printf("num %.0f for %07d.\n", total, rootid);
-		return total;
+		total = 2;
+	}
+	else if (total == 1)
+	{
+		assert(0);
 	}
 
-	total = 1.0;
+	number_t num = 1;
 	g->getChildList(rootid, children);
 	FOR_EACH_IN_CONTAINER(iter, children)
 	{
-		total *= (1 + count_consistent_subdag_tree(g, *iter));
+		num *= count_consistent_subdag_tree(g, *iter);
 	}
-	//PrivDataUnion data;
-	//data.ddouble = total;
-	setNumToPrivData(data, total);
-	g->setPrivData(rootid, data);
+
+	total += num - 1;
 
 	return total;
 }
@@ -1289,171 +1290,12 @@ number_t count_consistent_subdag_tree(DAG *g)
 	FOR_EACH_IN_CONTAINER(rootit, roots)
 	{
 		int rootid = *rootit;
-		total *= (1 + count_consistent_subdag_tree(g, rootid));
-	}
-
-	total -= 1;
-
-	return total;
-}
-
-
-// g(r - cutted)
-number_t count_consistent_subdag_cutting_children(DAG *g, int rootid, const IdList &cutted)
-{
-	assert(g->findVertex(rootid));
-	//number_t count = g->getPrivData(rootid).ddouble;
-	PrivDataUnion data = g->getPrivData(rootid);
-	number_t count = getNumFromPrivData(data);
-
-	ParentNumMap &parent_num_map = get_parent_info(g).parentNumMap;
-
-	IdList children;
-	g->getChildList(rootid, children);
-	FOR_EACH_IN_CONTAINER(iter, cutted)
-	{
-		// the cutted nodes should all be children of root
-		int idcutted = *iter;
-		IdList::iterator clit =
-			find(children.begin(), children.end(), idcutted);
-		if (clit == children.end())
-		{
-			// cutted vertex/edge hasn't been added to this dag,
-			// so it's already cutted. (Acctually, vertex added but
-			// edge not added should never be the case.)
-			continue;
-		}
-		if (parent_num_map[idcutted] > 1)
-		{
-			// multi-parent node is added to the dag in calculation
-			// this also shouldn't be divided
-			continue;
-		}
-
-		// we can calculate this number by divide the number of
-		// not cutting by the number of cutted vertex plus 1.
-		// (Proof see report)
-		//count /= g->getPrivData(idcutted).ddouble + 1;
-		data = g->getPrivData(idcutted);
-		count /= getNumFromPrivData(data) + 1;
-	}
-	return count;
-}
-
-
-// g(u|fixed), calculate the number of possibilities with fixed path
-number_t count_comb_with_fixed_nodes(DAG *g, const DAG &fixed)
-{
-	// All independent nodes must in the fixed list
-	IdList vs;
-	fixed.getVertexList(vs);
-
-	number_t total = 1.0;
-
-	FOR_EACH_IN_CONTAINER(fixedvit, vs)
-	{
-		IdList fixed_children; // this would be the cutted nodes
-		fixed.getChildList(*fixedvit, fixed_children);
-		if (fixed_children.empty())
-		{
-			// this should mean that this node is the root of the subdag
-			// or maybe there are multiple independent MP node in fixed
-			// all treated as the same.
-			//total *= g->getPrivData(*fixedvit).ddouble;
-			PrivDataUnion data = g->getPrivData(*fixedvit);
-			total *= getNumFromPrivData(data);
-			continue;
-		}
-
-		//g(r) *= g(f_i - fixed.children(f_i))
-		//f_i : the i-th fixed vertex
-		//Proof see report
-		total *= count_consistent_subdag_cutting_children(
-				g, *fixedvit, fixed_children);
+		total *= count_consistent_subdag_tree(g, rootid);
 	}
 
 	return total;
 }
 
-// for all vertices in list 'nodes', generate the possible combinations
-// and get the path(minimum consistent sub-DAG) for each combination
-// add them to the list 'paths'
-int gen_path_combinations(DAG *g, IdList nodes,
-		IdList &exclude, int fixed,
-		const DAG &fixed_path, list<DAG> &paths)
-{
-	if (nodes.empty())
-	{
-		paths.push_back(fixed_path);
-		return 0;
-	}
-
-	int id = nodes.front();
-	nodes.pop_front();
-
-	// check path
-	Vertex *v = fixed_path.findVertex(id);
-	if (v != NULL)
-	{
-		assert(0);
-		printf("Node %07d already in the path !\n", v->getId());
-		// Then must choosing this node, but not need to add it to path
-		// since it's already done
-		gen_path_combinations(g, nodes, exclude, fixed, fixed_path, paths);
-		return 0;
-	}
-
-	// not choosing
-
-	// add to exclude
-	exclude.push_back(id);
-	gen_path_combinations(g, nodes, exclude, fixed, fixed_path, paths);
-	// then pop it
-	exclude.pop_back();
-
-	if (id != fixed)
-	{
-		// choosing
-		DAG new_path(fixed_path);
-		int ret = get_path_to_root_with_exclusion(
-				g, id, exclude, new_path);
-		if (ret != 0)
-		{
-			// this node can't be choosen, because there are
-			// some parent was not choosen at previous process
-			// then we just need to return
-			return 0;
-		}
-
-
-		gen_path_combinations(g, nodes, exclude, fixed, new_path, paths);
-	}
-
-	return 0;
-}
-
-void uppropagate_counts(DAG *g, int parent,
-		const number_t &new_count, const number_t &old_count)
-{
-	Vertex *v = g->findVertex(parent);
-	PrivDataUnion priv = v->getPrivData();
-	//int this_old = priv.ddouble;
-	//priv.ddouble /= old_count + 1;
-	//priv.ddouble *= new_count + 1;
-	number_t &count = getNumFromPrivData(priv);
-	number_t this_old = count;
-	count /= old_count + 1;
-	count *= new_count + 1;
-	v->setPrivData(priv);
-
-	IdList grandplist;
-	v->getParentList(grandplist);
-	if (grandplist.size() == 1)
-	{
-		uppropagate_counts(g, grandplist.front(),
-				getNumFromPrivData(priv), this_old);
-	}
-}
 
 void clear_nonleaf_counts(DAG *g, int id)
 {
@@ -1545,85 +1387,6 @@ void clear_ancestor_counts(DAG *g, int id)
 	return;
 }
 
-/**
- * count_consistent_subdag_by_combining_indep_mpnodes
- *
- * @desc similar to above function, but rather than save all possible paths
- * to a list, calculate the number of consistent sub-DAGs with the
- * fixed path when each path is finished. Then sum them up.
- * This way we can reduce the space complexity.
- *
- * @para g, DAG to count
- * @para nodes, MP nodes to combine, there might be some nodes that are
- * dependent
- * @para exclude, nodes that are not choosen in previous process,
- * this works as a stack
- * @para fixed, the fixed node which is what we are adding
- * @para fixed_path, the fixed path for now
- */
-number_t count_consistent_subdag_by_combining_indep_mpnodes(
-		DAG *g, IdList nodes, IdList &exclude, int fixed,
-		const DAG &fixed_path)
-{
-	number_t total = 0;
-
-	if (nodes.empty())
-	{
-		//fixed_path.print();
-		total += count_comb_with_fixed_nodes(g, fixed_path);
-		return total;
-	}
-
-	int id = nodes.front();
-	nodes.pop_front();
-
-	// check path
-
-	Vertex *v = fixed_path.findVertex(id);
-	if (v != NULL)
-	{
-		assert(0);
-		printf("Node %07d already in the path !\n", v->getId());
-		// Then must choosing this node, but not need to add it to path
-		// since it's already done
-		total += count_consistent_subdag_by_combining_indep_mpnodes(
-				g, nodes, exclude, fixed, fixed_path);
-		return total;
-	}
-
-	// not choosing
-	// first remember the position of path list now
-
-	// add to exclude
-	exclude.push_back(id);
-	total += count_consistent_subdag_by_combining_indep_mpnodes(
-			g, nodes, exclude, fixed, fixed_path);
-	// then pop it
-	exclude.pop_back();
-
-	if (id != fixed)
-	{
-		// choosing
-		DAG new_path(fixed_path);
-		int ret = get_path_to_root_with_exclusion(
-				g, id, exclude, new_path);
-		if (ret != 0)
-		{
-			// this node can't be choosen, because there are
-			// some parent was not choosen at previous process
-			// then we just need to return
-			// Although this node can't be choosen, those possibilities
-			// that not including this node should be returned.
-			return total;
-		}
-
-
-		total += count_consistent_subdag_by_combining_indep_mpnodes(
-				g, nodes, exclude, fixed, new_path);
-	}
-
-	return total;
-}
 
 // g(DAG|fixed) calculate using the cutting fixed path method
 number_t count_consistent_subdag_by_cutting_fixed_path(DAG *g, int fixed, const DAG &fixed_path, bool using_hash = true)
@@ -1655,24 +1418,22 @@ number_t count_consistent_subdag_by_cutting_fixed_path(DAG *g, int fixed, const 
 	IdList rootlist;
 	modified.getRootList(rootlist);
 
-	// there is at least one base case, the path itself
-	number_t total = 1.0;
+	number_t total;
 
 	// Check there is something left
 	if (rootlist.size() != 0)
 	{
 		//printf("DAG after fixed path cutted.\n");
 		//modified.print(print_privdata);
-		total += count_consistent_subdag(&modified, rootlist, using_hash);
+		total = count_consistent_subdag(&modified, rootlist, using_hash);
 	}
 	else
 	{
 		// all nodes need to be fixed
 		printf("Nothing left after cut, all nodes in the DAG needs to be fixed.\n");
+		total = 1;
 	}
 
-	//delete parentInfo;
-	//privdata.dptr = NULL;
 	privdata.dptr.reset();
 	privdata.type = DT_EMPTY;
 	modified.setPrivData(privdata);
@@ -2097,7 +1858,7 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 		number_t num1 = count_consistent_subdag(&mA, roots1, using_hash);
 		number_t num2 = count_consistent_subdag(&mD, roots2, using_hash);
 
-		total = num1 + num2 + 1;
+		total = num1 + num2;
 	}
 
 	if (using_hash)
