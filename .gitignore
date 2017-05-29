@@ -28,6 +28,7 @@
 *.app
 
 *.swp
+*.swo
 log*
 .cproject
 .project

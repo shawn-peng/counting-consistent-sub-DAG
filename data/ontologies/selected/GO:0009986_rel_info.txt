@@ -1,0 +1,55 @@
+number of leaves: 12
+depth : 5
+number of MP nodes: 5
+
+node 0009897 has 1 parent(s)
+node 0009930 has 1 parent(s)
+node 0009986 has 0 parent(s)
+node 0010339 has 1 parent(s)
+node 0031232 has 1 parent(s)
+node 0031233 has 1 parent(s)
+node 0031236 has 2 parent(s)
+node 0031237 has 2 parent(s)
+node 0031362 has 2 parent(s)
+node 0032154 has 1 parent(s)
+node 0061835 has 1 parent(s)
+node 0070263 has 1 parent(s)
+node 0071575 has 2 parent(s)
+node 0090688 has 1 parent(s)
+node 0090689 has 1 parent(s)
+node 0097610 has 1 parent(s)
+node 0097611 has 1 parent(s)
+node 0097612 has 1 parent(s)
+node 0097618 has 1 parent(s)
+node 0097685 has 1 parent(s)
+node 0098567 has 1 parent(s)
+node 0098591 has 1 parent(s)
+node 1990914 has 3 parent(s)
+
+node 0009897 has 6 children
+node 0009930 has 0 children
+node 0009986 has 5 children
+node 0010339 has 1 children
+node 0031232 has 1 children
+node 0031233 has 3 children
+node 0031236 has 0 children
+node 0031237 has 1 children
+node 0031362 has 0 children
+node 0032154 has 2 children
+node 0061835 has 0 children
+node 0070263 has 0 children
+node 0071575 has 1 children
+node 0090688 has 0 children
+node 0090689 has 0 children
+node 0097610 has 4 children
+node 0097611 has 0 children
+node 0097612 has 1 children
+node 0097618 has 0 children
+node 0097685 has 0 children
+node 0098567 has 3 children
+node 0098591 has 0 children
+node 1990914 has 0 children
+
+Time used: 0m0.005s
+Number of recursive calls: 9
+Total count: 63684
