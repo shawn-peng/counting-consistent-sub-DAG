@@ -112,6 +112,8 @@ private:
 
 	PrivDataUnion privdata;
 
+	bool reversed;
+
 protected:
 	int rebuildIndex();
 
@@ -122,7 +124,7 @@ protected:
 
 
 public:
-	DAG() {};
+	DAG() : reversed(false) {};
 	DAG(const DAG &other);
 	int addVertex(int id);
 

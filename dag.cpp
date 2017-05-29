@@ -207,6 +207,7 @@ DAG &DAG::operator =(const DAG &other)
 	vertices = other.vertices;
 	// rootid = other.rootid;
 	roots = other.roots;
+	reversed = other.reversed;
 
 	this->rebuildIndex();
 	return *this;
@@ -375,6 +376,14 @@ int DAG::getVertexList(IdList &list) const
 int DAG::getVertexString(string &str) const
 {
 	ostringstream oss;
+	//if (!reversed)
+	//{
+	//	oss << "U " << endl;
+	//}
+	//else
+	//{
+	//	oss << "D " << endl;
+	//}
 	FOR_EACH_IN_CONTAINER(iter, vindex)
 	{
 		oss << iter->first << ' ';
@@ -776,6 +785,7 @@ void DAG::reverse()
 		iter->reverse();
 	}
 	generateRoots();
+	reversed = !reversed;
 }
 
 int DAG::removeVertex(int id)
