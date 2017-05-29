@@ -153,7 +153,7 @@ public:
 
 	int getMultiParentVertices(IdList &list) const;
 
-	void setRoot(int id);
+	void setSingleRoot(int id);
 	int getFirstRoot() const;
 	void addToRootList(int id);
 	void removeFromRootList(int id);

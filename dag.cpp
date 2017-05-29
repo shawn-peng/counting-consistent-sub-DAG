@@ -448,7 +448,7 @@ int DAG::getParentList(int id, IdList &list) const
 }
 
 
-void DAG::setRoot(int id)
+void DAG::setSingleRoot(int id)
 {
 	roots.clear();
 	roots.push_back(id);
@@ -505,12 +505,6 @@ void DAG::getRootList(IdList &list) const
 	return;
 }
 
-bool DAG::isRoot(int id) const
-{
-	auto pos = find(roots.begin(), roots.end(), id);
-	return pos != roots.end();
-}
-
 int DAG::generateRoots()
 {
 	int cnt = 0;
@@ -526,6 +520,21 @@ int DAG::generateRoots()
 	return cnt;
 }
 
+bool DAG::isRoot(int id) const
+{
+	auto pos = find(roots.begin(), roots.end(), id);
+	return pos != roots.end();
+}
+
+bool DAG::isLeaf(int id) const
+{
+	return (getChildNum(id) == 0);
+}
+
+bool DAG::isInternal(int id) const
+{
+	return (!isLeaf(id) && !isRoot(id));
+}
 
 void DAG::setPrivData(const PrivDataUnion &data)
 {

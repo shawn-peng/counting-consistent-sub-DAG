@@ -1158,7 +1158,7 @@ int get_consistent_subdag(DAG *g, int rootid, list<DAG> &subdags)
 
 	DAG g0;
 	g0.addVertex(rootid);
-	g0.setRoot(rootid);
+	g0.setSingleRoot(rootid);
 
 	EdgeList fringe;
 
@@ -1265,6 +1265,7 @@ number_t count_consistent_subdag_tree(DAG *g, int rootid)
 	}
 	else
 	{
+		assert(!g->isInternal(rootid));
 	}
 
 	number_t num = 1;
@@ -1455,7 +1456,7 @@ number_t count_consistent_subdag_adding_subdag(DAG *g, IdList mpnodes, const DAG
 	int srid = subdag.getFirstRoot();
 	DAG pathdag;
 	get_path_to_root(g, srid, pathdag);
-	//pathdag.setRoot(rootid);
+	//pathdag.setSingleRoot(rootid);
 	//printf("--------------------------------------------\n");
 	//printf("Fixed path to root of node: %07d\n", srid);
 	//pathdag.print();
