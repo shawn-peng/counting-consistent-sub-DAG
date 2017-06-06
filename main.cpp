@@ -42,42 +42,42 @@ int main(int argc, char *argv[])
 	list<DAG> subdags;
 	number_t check_num;
 	//if (g->getVertexNum() <= 35)
-	if (0)
-	{
-		if (rootlist.size() == 1)
-		{
-			// sanity check
-			rootid = rootlist.front();
-			ret = get_consistent_subdag(g, rootid, subdags);
-			//print_subdag_list(subdags);
-		}
-		else
-		{
-			DAG new_g(*g);
-			new_g.addVertex(0);
-			FOR_EACH_IN_CONTAINER(iter, rootlist)
-			{
-				new_g.addEdge(0, *iter);
-			}
-			new_g.setRoot(0);// set as the only root
-			//rootid = rootlist.front();
-			printf("DAG with virtual root:\n");
-			new_g.print();
-			ret = get_consistent_subdag(&new_g, 0, subdags);
-			// remove the subdag with only the virtual root
-			subdags.pop_front();
-		}
-		check_num = subdags.size();
-	}
-	else
-	{
-		DAG rg(*g);
-		rg.reverse();
-		IdList rroots;
-		rg.getRootList(rroots);
-		check_num = count_consistent_subdag(&rg, rroots);
-		graph_alg_clear_hash();
-	}
+	//if (0)
+	//{
+	//	if (rootlist.size() == 1)
+	//	{
+	//		// sanity check
+	//		rootid = rootlist.front();
+	//		ret = get_consistent_subdag(g, rootid, subdags);
+	//		//print_subdag_list(subdags);
+	//	}
+	//	else
+	//	{
+	//		DAG new_g(*g);
+	//		new_g.addVertex(0);
+	//		FOR_EACH_IN_CONTAINER(iter, rootlist)
+	//		{
+	//			new_g.addEdge(0, *iter);
+	//		}
+	//		new_g.setRoot(0);// set as the only root
+	//		//rootid = rootlist.front();
+	//		printf("DAG with virtual root:\n");
+	//		new_g.print();
+	//		ret = get_consistent_subdag(&new_g, 0, subdags);
+	//		// remove the subdag with only the virtual root
+	//		subdags.pop_front();
+	//	}
+	//	check_num = subdags.size();
+	//}
+	//else
+	//{
+	//	DAG rg(*g);
+	//	rg.reverse();
+	//	IdList rroots;
+	//	rg.getRootList(rroots);
+	//	check_num = count_consistent_subdag(&rg, rroots);
+	//	graph_alg_clear_hash();
+	//}
 
 	//reduce_dag(g);
 

@@ -1844,12 +1844,12 @@ number_t count_consistent_subdag_for_independent_subdag_nonrecursive(DAG *g, boo
 
 		extend_subdags.pop_front();
 
-		for (int di = 1; di < recursion_depth; di++)
+		if (recursion_depth <= 20)
 		{
-			printf("  ");
-		}
-		//if (recursion_depth <= 2)
-		{
+			for (int di = 1; di < recursion_depth; di++)
+			{
+				printf("  ");
+			}
 			printf("[%d] %d MP nodes left.\n", recursion_depth, extend_subdags.size());
 		}
 	}
@@ -2037,18 +2037,18 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 	{
 		total = count_consistent_subdag_tree(g);
 	}
-	else if (mpnodes.size() < 3)
-	{
-		total = count_consistent_subdag_for_independent_subdag_nonrecursive(g, using_hash);
-	}
+	//else if (mpnodes.size() < 3)
+	//{
+	//	total = count_consistent_subdag_for_independent_subdag_nonrecursive(g, using_hash);
+	//}
 	else
 	{
-		for (int di = 1; di < recursion_depth; di++)
+		if (recursion_depth <= 20)
 		{
-			printf("  ");
-		}
-		//if (recursion_depth <= 2)
-		{
+			for (int di = 1; di < recursion_depth; di++)
+			{
+				printf("  ");
+			}
 			printf("[%d] %d MP nodes left.\n",
 					recursion_depth, mpnodes.size());
 		}
