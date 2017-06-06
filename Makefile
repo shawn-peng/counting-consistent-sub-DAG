@@ -4,7 +4,7 @@ ifeq ($(strip $(OPT)),)
 	OPT=-g
 endif
 
-CPPFLAGS+=$(OPT) -std=c++0x -lstdc++ -lgmpxx -lgmp -lboost_random
+CPPFLAGS+=$(OPT) -std=c++0x -lstdc++ -lgmpxx -lgmp -lboost_random -lm
 
 all: graph_alg graph_gen analyze_graph batch_graph_gen
 
