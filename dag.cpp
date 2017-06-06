@@ -207,6 +207,7 @@ DAG &DAG::operator =(const DAG &other)
 	vertices = other.vertices;
 	// rootid = other.rootid;
 	roots = other.roots;
+	reversed = other.reversed;
 
 	this->rebuildIndex();
 	return *this;
@@ -256,7 +257,7 @@ int DAG::addDAGAsChildOf(int parent, const DAG &other)
 {
 	DAG tmpdag(other);
 
-	int otherroot = other.getRoot();
+	int otherroot = other.getFirstRoot();
 	transferSubdag(tmpdag, *this, otherroot);
 
 	int ret = addEdge(parent,otherroot);
@@ -274,7 +275,7 @@ int DAG::addDAGAsChildOf(const IdList &parents, const DAG &other)
 {
 	DAG tmpdag(other);
 
-	int otherroot = other.getRoot();
+	int otherroot = other.getFirstRoot();
 	transferSubdag(tmpdag, *this, otherroot);
 
 	int ret;
@@ -294,7 +295,7 @@ int DAG::addDAGAsChildOf(const IdList &parents, const DAG &other)
 
 int DAG::transplantAsChildOf(const IdList &parents, DAG &other)
 {
-	int otherroot = other.getRoot();
+	int otherroot = other.getFirstRoot();
 	transferSubdag(other, *this, otherroot);
 
 	int ret;
@@ -375,6 +376,14 @@ int DAG::getVertexList(IdList &list) const
 int DAG::getVertexString(string &str) const
 {
 	ostringstream oss;
+	//if (!reversed)
+	//{
+	//	oss << "U " << endl;
+	//}
+	//else
+	//{
+	//	oss << "D " << endl;
+	//}
 	FOR_EACH_IN_CONTAINER(iter, vindex)
 	{
 		oss << iter->first << ' ';
@@ -439,14 +448,14 @@ int DAG::getParentList(int id, IdList &list) const
 }
 
 
-void DAG::setRoot(int id)
+void DAG::setSingleRoot(int id)
 {
 	roots.clear();
 	roots.push_back(id);
 	return;
 }
 
-int DAG::getRoot() const
+int DAG::getFirstRoot() const
 {
 	return roots.front();
 }
@@ -496,12 +505,6 @@ void DAG::getRootList(IdList &list) const
 	return;
 }
 
-bool DAG::isRoot(int id) const
-{
-	auto pos = find(roots.begin(), roots.end(), id);
-	return pos != roots.end();
-}
-
 int DAG::generateRoots()
 {
 	int cnt = 0;
@@ -517,6 +520,21 @@ int DAG::generateRoots()
 	return cnt;
 }
 
+bool DAG::isRoot(int id) const
+{
+	auto pos = find(roots.begin(), roots.end(), id);
+	return pos != roots.end();
+}
+
+bool DAG::isLeaf(int id) const
+{
+	return (getChildNum(id) == 0);
+}
+
+bool DAG::isInternal(int id) const
+{
+	return (!isLeaf(id) && !isRoot(id));
+}
 
 void DAG::setPrivData(const PrivDataUnion &data)
 {
@@ -776,6 +794,7 @@ void DAG::reverse()
 		iter->reverse();
 	}
 	generateRoots();
+	reversed = !reversed;
 }
 
 int DAG::removeVertex(int id)
