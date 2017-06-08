@@ -70,6 +70,10 @@ class Vertex
 {
 private:
 	int id;
+	// used when decendants are pruned, saves all decendants' id's
+	// to consider convenience, the vertex itself also counted
+	// there may exist recursive subkey
+	std::string subkey;
 	IdList children;
 	IdList parents;
 	PrivDataUnion privdata;
@@ -94,6 +98,11 @@ public:
 	void setPrivData(const PrivDataUnion &data);
 	PrivDataUnion &getPrivData();
 	const PrivDataUnion &getPrivData() const;
+
+	void setSubkey(const std::string &key);
+	const std::string &getSubkey() const;
+	std::string &getSubkey();
+	void clearSubkey();
 };
 
 typedef list<Vertex> VertexList;
@@ -140,6 +149,11 @@ public:
 	const PrivDataUnion &getPrivData(int id) const;
 	void copyVertexPrivData(const DAG &other);
 	void clearVertexPrivData();
+
+	void setSubkey(int id, const std::string &subkey);
+	const std::string &getSubkey(int id) const;
+	std::string &getSubkey(int id);
+	void clearSubkey(int id);
 
 	int addDAGAsChildOf(int parent, const DAG &other);
 	int addDAGAsChildOf(const IdList &parents, const DAG &other);

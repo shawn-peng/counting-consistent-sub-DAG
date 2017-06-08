@@ -195,6 +195,27 @@ const PrivDataUnion &Vertex::getPrivData() const
 	return privdata;
 }
 
+void Vertex::setSubkey(const string &str)
+{
+	subkey = str;
+}
+
+const string &Vertex::getSubkey() const
+{
+	return subkey;
+}
+
+string &Vertex::getSubkey()
+{
+	return subkey;
+}
+
+void Vertex::clearSubkey()
+{
+	subkey = "";
+}
+
+
 DAG::DAG(const DAG &other)
 {
 	*this = other;
@@ -376,17 +397,23 @@ int DAG::getVertexList(IdList &list) const
 int DAG::getVertexString(string &str) const
 {
 	ostringstream oss;
-	//if (!reversed)
-	//{
-	//	oss << "U " << endl;
-	//}
-	//else
-	//{
-	//	oss << "D " << endl;
-	//}
+	if (!reversed)
+	{
+		oss << "U " << endl;
+	}
+	else
+	{
+		oss << "D " << endl;
+	}
 	FOR_EACH_IN_CONTAINER(iter, vindex)
 	{
-		oss << iter->first << ' ';
+		oss << iter->first;
+		auto str = iter->second->getSubkey();
+		if (str != "")
+		{
+			oss << '(' << str << ')';
+		}
+		oss << ' ';
 	}
 	str = string(move(oss.str()));
 	return 0;
@@ -606,6 +633,50 @@ void DAG::clearVertexPrivData()
 		int id = vit->getId();
 		vit->setPrivData(PrivDataUnion());
 	}
+}
+
+void DAG::setSubkey(int id, const string &subkey)
+{
+	Vertex *v = findVertex(id);
+	if (v == NULL)
+	{
+		printf("Error in %s(): id:%07d not found.\n", __FUNCTION__, id);
+		exit(1);
+	}
+	v->setSubkey(subkey);
+}
+
+const string &DAG::getSubkey(int id) const
+{
+	const Vertex *v = findVertex(id);
+	if (v == NULL)
+	{
+		printf("Error in %s(): id:%07d not found.\n", __FUNCTION__, id);
+		exit(1);
+	}
+	return v->getSubkey();
+}
+
+string &DAG::getSubkey(int id)
+{
+	Vertex *v = findVertex(id);
+	if (v == NULL)
+	{
+		printf("Error in %s(): id:%07d not found.\n", __FUNCTION__, id);
+		exit(1);
+	}
+	return v->getSubkey();
+}
+
+void DAG::clearSubkey(int id)
+{
+	Vertex *v = findVertex(id);
+	if (v == NULL)
+	{
+		printf("Error in %s(): id:%07d not found.\n", __FUNCTION__, id);
+		exit(1);
+	}
+	v->clearSubkey();
 }
 
 void DAG::printSubdag(const Vertex &v, int depth) const

@@ -2244,6 +2244,10 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 		number_t num = count_consistent_subdag(subdag, subroots, using_hash);
 		//printf("count is %f\n", num);
 
+		// generate subkey
+		string subkey;
+		subdag->getVertexString(subkey);
+
 		// add to original dag
 
 		// we can use only one root to represent the subdag
@@ -2273,12 +2277,14 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 				modified.addVertex(srid);
 				modified.addEdge(parent, srid);
 				modified.setPrivData(srid, priv);
+				modified.setSubkey(srid, subkey);
 			}
 			else
 			{// in some later subdag, which will be counted and added later
 				parent_subdag->addVertex(srid);
 				parent_subdag->addEdge(parent, srid);
 				parent_subdag->setPrivData(srid, priv);
+				parent_subdag->setSubkey(srid, subkey);
 			}
 		}
 		else
@@ -2287,6 +2293,7 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 			modified.addVertex(srid);
 			modified.addToRootList(srid);
 			modified.setPrivData(srid, priv);
+			modified.setSubkey(srid, subkey);
 		}
 	}
 
