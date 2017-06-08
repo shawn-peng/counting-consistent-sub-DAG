@@ -60,6 +60,8 @@ static unordered_map<string, number_t> hash_table;
 static int hash_tries = 0;
 static int hash_hits = 0;
 
+static bool verify_hash = false;
+
 static map<string, int> func_calls;
 
 
@@ -91,19 +93,10 @@ void print_id_list(const IdList &list)
 	return;
 }
 
+int print_privdata_num(const PrivDataUnion *data);
 int print_privdata(const PrivDataUnion *data)
 {
-	//return printf("%.0f", data->ddouble);
-	void *p = data->dptr.get();
-	if (!p)
-	{
-		return 0;
-	}
-	const number_t &num = *(number_t *)(p);
-	stringstream ss;
-	ss << num;
-	printf("%s", ss.str().c_str());
-	return ss.str().size();
+	print_privdata_num(data);
 }
 
 int print_privdata_int(const PrivDataUnion *data)
@@ -113,8 +106,16 @@ int print_privdata_int(const PrivDataUnion *data)
 
 int print_privdata_num(const PrivDataUnion *data)
 {
-	//return printf("%.0f", data->ddouble);
-	const number_t &num = *(number_t *)(data->dptr.get());
+	void *p = data->dptr.get();
+	number_t num;
+	if (p)
+	{
+		num = *(number_t *)(p);
+	}
+	else
+	{
+		num = 0;
+	}
 	stringstream ss;
 	ss << num;
 	printf("%s", ss.str().c_str());
@@ -157,6 +158,7 @@ number_t &getNumFromPrivData(PrivDataUnion &data)
 	return *(number_t *)vp;
 }
 
+// will alloc a new object
 void setNumToPrivData(PrivDataUnion &data, const number_t &num)
 {
 	//void *p = data.dptr;
@@ -173,10 +175,11 @@ void setNumToPrivData(PrivDataUnion &data, const number_t &num)
 	//}
 	//*p = num;
 	shared_ptr<void> &p = data.dptr;
-	p = make_shared<number_t>(0);
-	data.type = DT_POINTER;
+	p = make_shared<number_t>(num);
 	shared_ptr<number_t> np = static_pointer_cast<number_t>(p);
-	*np = num;
+	data.type = DT_POINTER;
+	//*np = num;
+	return;
 }
 
 void updateNumInPrivData(PrivDataUnion &data, const number_t &num)
@@ -1499,7 +1502,7 @@ number_t count_consistent_subdag_for_independent_subdag_nonrecursive(DAG *g, boo
 
 	string vs;
 	get_signature(g, vs);
-	if (using_hash)
+	if (using_hash && !verify_hash)
 	{
 		//printf("vertices: %s\n", vs.c_str());
 		//printf("Hash count: %d\n", hash_table.size());
@@ -1628,7 +1631,36 @@ number_t count_consistent_subdag_for_independent_subdag_nonrecursive(DAG *g, boo
 
 	if (using_hash)
 	{
-		hash_table[vs] = total;
+		if (!verify_hash)
+		{
+			hash_table[vs] = total;
+		}
+		else
+		{
+			auto pos = hash_table.find(vs);
+			hash_tries++;
+			if (pos != hash_table.end())
+			{
+				// check with hashed count
+				//hash_hits++;
+				//printf("Hash hit! (%d)\n", hash_hits);
+				cout << "Hashed count " << pos->second
+					<< " compared to result count " << total << endl;
+				if (pos->second == total)
+				{
+					cout << "Correct." << endl;
+				}
+				else
+				{
+					cout << "Error." << endl;
+					assert(0);
+				}
+			}
+			else
+			{
+				hash_table[vs] = total;
+			}
+		}
 		//printf("hash count: %d (%f)\n",
 		//		hash_table.size(), (number_t)hash_hits/hash_tries);
 	}
@@ -1758,9 +1790,12 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 	// profiling
 	func_calls[__FUNCTION__]++;
 
+	printf("counting for:\n");
+	g->print(print_privdata);
+
 	string vs;
 	get_signature(g, vs);
-	if (using_hash)
+	if (using_hash && !verify_hash)
 	{
 		//printf("vertices: %s\n", vs.c_str());
 		//printf("Hash count: %d\n", hash_table.size());
@@ -1770,8 +1805,7 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 		{
 			hash_hits++;
 			//printf("Hash hit! (%d)\n", hash_hits);
-			//printf("Hashed count (%f)\n", pos->second);
-			//cout << "Hashed count " << pos->second << endl;
+			cout << "Hashed count " << pos->second << endl;
 			return pos->second;
 		}
 	}
@@ -1799,17 +1833,17 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 	{
 		total = count_consistent_subdag_tree(g);
 	}
-	else if (mpnodes.size() < 3)
-	{
-		total = count_consistent_subdag_for_independent_subdag_nonrecursive(g, using_hash);
-	}
+	//else if (mpnodes.size() < 3)
+	//{
+	//	total = count_consistent_subdag_for_independent_subdag_nonrecursive(g, using_hash);
+	//}
 	else
 	{
 		for (int di = 1; di < recursion_depth; di++)
 		{
 			printf("  ");
 		}
-		//if (recursion_depth <= 2)
+		if (recursion_depth <= 20)
 		{
 			printf("[%d] %d MP nodes left.\n",
 					recursion_depth, mpnodes.size());
@@ -1863,9 +1897,22 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 		number_t num1_c = count_consistent_subdag(&rmA, roots1, using_hash);
 		if (num1 != num1_c)
 		{
-			printf("find BUG.\n");
+			cout << "found a BUG:" << endl;
+			cout << "This is the subdag:" << endl;
+			g->print(print_privdata_num);
+			cout << "pivoting node: " << best_node << endl;
+			cout << "g[-A]:" << endl;
+			mA.print(print_privdata_num);
+			cout << "g[-A].reversed:" << endl;
+			rmA.print(print_privdata_num);
+			cout << "count(g[-A]) = " << num1 << " but" << endl
+				<< "count(g[-A].reversed) = " << num1_c
+				<< endl;
+			
 			assert(0);
+			exit(2);
 		}
+
 		number_t num2 = count_consistent_subdag(&mD, roots2, using_hash);
 		DAG rmD(mD);
 		rmD.reverse();
@@ -1873,8 +1920,20 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 		number_t num2_c = count_consistent_subdag(&rmD, roots2, using_hash);
 		if (num2 != num2_c)
 		{
-			printf("find BUG.\n");
+			cout << "found a BUG:" << endl;
+			cout << "This is the subdag:" << endl;
+			g->print(print_privdata_num);
+			cout << "pivoting node: " << best_node << endl;
+			cout << "g[-D]:" << endl;
+			mD.print(print_privdata_num);
+			cout << "g[-D].reversed:" << endl;
+			rmD.print(print_privdata_num);
+			cout << "count(g[-D]) = " << num2 << " but" << endl
+				<< "count(g[-D].reversed) = " << num2_c
+				<< endl;
+			
 			assert(0);
+			exit(2);
 		}
 
 		total = num1 + num2;
@@ -1882,10 +1941,44 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 
 	if (using_hash)
 	{
-		hash_table[vs] = total;
+		if (!verify_hash)
+		{
+			hash_table[vs] = total;
+		}
+		else
+		{
+			auto pos = hash_table.find(vs);
+			hash_tries++;
+			if (pos != hash_table.end())
+			{
+				// check with hashed count
+				//hash_hits++;
+				//printf("Hash hit! (%d)\n", hash_hits);
+				cout << "Hashed count " << pos->second
+					<< " compared to result count " << total << endl;
+				if (pos->second == total)
+				{
+					cout << "Correct." << endl;
+				}
+				else
+				{
+					cout << "Error." << endl;
+					assert(0);
+				}
+			}
+			else
+			{
+				hash_table[vs] = total;
+			}
+		}
 		//printf("hash count: %d (%f)\n",
 		//		hash_table.size(), (number_t)hash_hits/hash_tries);
 	}
+
+	cout << "the count for DAG:" << endl;
+	g->print(print_privdata);
+	cout << "is: " << total << endl;
+	cout << endl;
 
 	recursion_depth--;
 	return total;
@@ -2068,8 +2161,8 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 	// profiling
 	func_calls[__FUNCTION__]++;
 
-	//printf("counting for:\n");
-	//g->print();
+	printf("pruning and counting:\n");
+	g->print(print_privdata);
 
 	DAG modified(*g);
 //	modified.copyVertexPrivData(*g);
@@ -2087,7 +2180,7 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 	get_signature(&modified, vs);
 	//printf("vertices: %s\n", vs.c_str());
 	//printf("Hash count: %d\n", hash_table.size());
-	if (using_hash)
+	if (using_hash && !verify_hash)
 	{
 		//printf("vertices: %s\n", vs.c_str());
 		//printf("Hash count: %d\n", hash_table.size());
@@ -2097,8 +2190,7 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 		{
 			hash_hits++;
 			//printf("Hash hit! (%d)\n", hash_hits);
-			//printf("Hashed count (%f)\n", pos->second);
-			//cout << "Hashed count " << pos->second << endl;
+			cout << "Hashed count " << pos->second << endl;
 			return pos->second;
 		}
 	}
@@ -2122,9 +2214,16 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 	// So we don't need to do anything
 	//decomp_subdags.reverse();
 
-	//printf("decomposed subdags.\n");
-	//modified.print();
-	//print_subdag_list(decomp_subdags);
+	if (decomp_subdags.size() == 0)
+	{
+		printf("not decomposed.\n");
+	}
+	else
+	{
+		printf("decomposed subdags.\n");
+		modified.print();
+		print_subdag_list(decomp_subdags);
+	}
 
 	ParentMap &parent_map = get_parent_info(&modified).parentMap;
 
@@ -2194,8 +2293,8 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 	//bool try_hash;
 	if (decomp_subdags.size() > 0)
 	{
-		//printf("After regenerate.\n");
-		//modified.print(print_privdata);
+		printf("After regenerate.\n");
+		modified.print(print_privdata);
 		// because we substituted a subdag to a vertex, now we can't only use the
 		// nodes of the regenerated dag as the hash key to store the count.
 		using_hash = false;
@@ -2217,7 +2316,36 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 
 	if (using_hash)
 	{
-		hash_table[vs] = total;
+		if (!verify_hash)
+		{
+			hash_table[vs] = total;
+		}
+		else
+		{
+			auto pos = hash_table.find(vs);
+			hash_tries++;
+			if (pos != hash_table.end())
+			{
+				// check with hashed count
+				//hash_hits++;
+				//printf("Hash hit! (%d)\n", hash_hits);
+				cout << "Hashed count " << pos->second
+					<< " compared to result count " << total << endl;
+				if (pos->second == total)
+				{
+					cout << "Correct." << endl;
+				}
+				else
+				{
+					cout << "Error." << endl;
+					assert(0);
+				}
+			}
+			else
+			{
+				hash_table[vs] = total;
+			}
+		}
 		//printf("hash count: %d (%f)\n",
 		//		hash_table.size(), (number_t)hash_hits/hash_tries);
 	}
