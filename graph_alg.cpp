@@ -25,6 +25,11 @@
 
 #include <gmpxx.h>
 
+
+static const bool debugging = false;
+
+static const bool verify_hash = false;
+
 using namespace NS_DAG;
 
 typedef mpz_class number_t;
@@ -59,8 +64,6 @@ struct PathNode
 static unordered_map<string, number_t> hash_table;
 static int hash_tries = 0;
 static int hash_hits = 0;
-
-static bool verify_hash = false;
 
 static map<string, int> func_calls;
 
@@ -1642,17 +1645,16 @@ number_t count_consistent_subdag_for_independent_subdag_nonrecursive(DAG *g, boo
 			if (pos != hash_table.end())
 			{
 				// check with hashed count
-				//hash_hits++;
-				//printf("Hash hit! (%d)\n", hash_hits);
-				cout << "Hashed count " << pos->second
-					<< " compared to result count " << total << endl;
-				if (pos->second == total)
+				hash_hits++;
+				if (debugging)
 				{
-					cout << "Correct." << endl;
+					//printf("Hash hit! (%d)\n", hash_hits);
 				}
-				else
+				if (pos->second != total)
 				{
 					cout << "Error." << endl;
+					cout << "Hashed count " << pos->second
+						<< " compared to result count " << total << endl;
 					assert(0);
 				}
 			}
@@ -1790,8 +1792,11 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 	// profiling
 	func_calls[__FUNCTION__]++;
 
-	printf("counting for:\n");
-	g->print(print_privdata);
+	if (debugging)
+	{
+		printf("counting for:\n");
+		g->print(print_privdata);
+	}
 
 	string vs;
 	get_signature(g, vs);
@@ -1805,7 +1810,10 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 		{
 			hash_hits++;
 			//printf("Hash hit! (%d)\n", hash_hits);
-			cout << "Hashed count " << pos->second << endl;
+			if (debugging)
+			{
+				cout << "Hashed count " << pos->second << endl;
+			}
 			return pos->second;
 		}
 	}
@@ -1952,17 +1960,16 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 			if (pos != hash_table.end())
 			{
 				// check with hashed count
-				//hash_hits++;
-				//printf("Hash hit! (%d)\n", hash_hits);
-				cout << "Hashed count " << pos->second
-					<< " compared to result count " << total << endl;
-				if (pos->second == total)
+				hash_hits++;
+				if (debugging)
 				{
-					cout << "Correct." << endl;
+					//printf("Hash hit! (%d)\n", hash_hits);
 				}
-				else
+				if (pos->second != total)
 				{
 					cout << "Error." << endl;
+					cout << "Hashed count " << pos->second
+						<< " compared to result count " << total << endl;
 					assert(0);
 				}
 			}
@@ -1975,10 +1982,12 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 		//		hash_table.size(), (number_t)hash_hits/hash_tries);
 	}
 
-	cout << "the count for DAG:" << endl;
-	g->print(print_privdata);
-	cout << "is: " << total << endl;
-	cout << endl;
+	if (debugging)
+	{
+		cout << "the count for DAG:" << endl;
+		g->print(print_privdata);
+		cout << "is: " << total << endl;
+	}
 
 	recursion_depth--;
 	return total;
@@ -2161,8 +2170,11 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 	// profiling
 	func_calls[__FUNCTION__]++;
 
-	printf("pruning and counting:\n");
-	g->print(print_privdata);
+	if (debugging)
+	{
+		printf("pruning and counting:\n");
+		g->print(print_privdata);
+	}
 
 	DAG modified(*g);
 //	modified.copyVertexPrivData(*g);
@@ -2190,7 +2202,10 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 		{
 			hash_hits++;
 			//printf("Hash hit! (%d)\n", hash_hits);
-			cout << "Hashed count " << pos->second << endl;
+			if (debugging)
+			{
+				cout << "Hashed count " << pos->second << endl;
+			}
 			return pos->second;
 		}
 	}
@@ -2214,15 +2229,18 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 	// So we don't need to do anything
 	//decomp_subdags.reverse();
 
-	if (decomp_subdags.size() == 0)
+	if (debugging)
 	{
-		printf("not decomposed.\n");
-	}
-	else
-	{
-		printf("decomposed subdags.\n");
-		modified.print();
-		print_subdag_list(decomp_subdags);
+		if (decomp_subdags.size() == 0)
+		{
+			printf("not decomposed.\n");
+		}
+		else
+		{
+			printf("decomposed subdags.\n");
+			modified.print();
+			print_subdag_list(decomp_subdags);
+		}
 	}
 
 	ParentMap &parent_map = get_parent_info(&modified).parentMap;
@@ -2297,17 +2315,19 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 		}
 	}
 
-	//bool try_hash;
-	if (decomp_subdags.size() > 0)
+	if (debugging)
 	{
-		printf("After regenerate.\n");
-		modified.print(print_privdata);
-		// because we substituted a subdag to a vertex, now we can't only use the
-		// nodes of the regenerated dag as the hash key to store the count.
-		//using_hash = false;
-		// Now this is solved by using the subkey in Vertex
-		// whenever we prune a subdag to a single node, we save the key of that
-		// subdag into the "subkey" member variable in the Vertex structure
+		if (decomp_subdags.size() > 0)
+		{
+			printf("After regenerate.\n");
+			modified.print(print_privdata);
+			// because we substituted a subdag to a vertex, now we can't only use the
+			// nodes of the regenerated dag as the hash key to store the count.
+			//using_hash = false;
+			// Now this is solved by using the subkey in Vertex
+			// whenever we prune a subdag to a single node, we save the key of that
+			// subdag into the "subkey" member variable in the Vertex structure
+		}
 	}
 
 
@@ -2337,17 +2357,16 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 			if (pos != hash_table.end())
 			{
 				// check with hashed count
-				//hash_hits++;
-				//printf("Hash hit! (%d)\n", hash_hits);
-				cout << "Hashed count " << pos->second
-					<< " compared to result count " << total << endl;
-				if (pos->second == total)
+				hash_hits++;
+				if (debugging)
 				{
-					cout << "Correct." << endl;
+					//printf("Hash hit! (%d)\n", hash_hits);
 				}
-				else
+				if (pos->second != total)
 				{
 					cout << "Error." << endl;
+					cout << "Hashed count " << pos->second
+						<< " compared to result count " << total << endl;
 					assert(0);
 				}
 			}
