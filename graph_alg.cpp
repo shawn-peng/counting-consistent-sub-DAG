@@ -2304,7 +2304,10 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 		modified.print(print_privdata);
 		// because we substituted a subdag to a vertex, now we can't only use the
 		// nodes of the regenerated dag as the hash key to store the count.
-		using_hash = false;
+		//using_hash = false;
+		// Now this is solved by using the subkey in Vertex
+		// whenever we prune a subdag to a single node, we save the key of that
+		// subdag into the "subkey" member variable in the Vertex structure
 	}
 
 
