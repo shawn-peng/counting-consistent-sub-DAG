@@ -41,13 +41,17 @@ beginfig(1);
     newCircle.u5("") "circmargin(0.05in)";
     newCircle.u6("") "circmargin(0.05in)";
     newCircle.u7("") "circmargin(0.05in)";
+    newCircle.u8("") "circmargin(0.05in)";
+
     u1.c = anchor1 shifted (1.2unit1, -0.2unit1);
-    u2.c - u1.c = u4.c - u3.c = (-0.5unit1, -0.4unit1);
+    u2.c - u1.c = (-0.5unit1, -0.4unit1);
+    u4.c - u3.c = (-0.5unit1, -0.4unit1);
     u4.c - u5.c = (0.1unit1, 0.6unit1);
     u3.c - u1.c = (0.6unit1, -0.5unit1);
-    u5.c - u6.c = (-0.4unit1, 0.8unit1);
-    u5.c - u7.c = (0.4unit1, 0.8unit1);
-    for i = 1 upto 7: drawObj(u[i]); endfor
+    u5.c - u6.c = (-0.3unit1, 0.8unit1);
+    u5.c - u7.c = (0.3unit1, 0.8unit1);
+    u2.c - u8.c = (0.1unit1, 0.7unit1);
+    for i = 1 upto 8: drawObj(u[i]); endfor
     ncline(u1)(u2);
     ncline(u1)(u3);
     ncline(u2)(u4);
@@ -56,6 +60,8 @@ beginfig(1);
     ncline(u4)(u5);
     ncline(u5)(u6);
     ncline(u5)(u7);
+    ncline(u2)(u8);
+    ncline(u4)(u8);
 
     label(btex $u$ etex, u5.c shifted (0.25unit1,-0.18unit1));
 
@@ -63,7 +69,7 @@ beginfig(1);
     %% figure 2
     %%%%%%%%%%%
     unit2 = unit1;
-    newCircle.ostem(btex \rule{0in}{0.45in} etex) "circmargin(0.3in)","framestyle(dashed evenly)";
+    newCircle.ostem(btex \rule{0in}{0.45in} etex) "circmargin(0.32in)","framestyle(dashed evenly)";
     newEllipse.D(btex \rule{0.3in}{0in} etex) "fit(true)","circmargin(0.2in)","framestyle(dashed evenly)";
 
     newCircle.v1("") "circmargin(0.05in)";
@@ -73,6 +79,8 @@ beginfig(1);
     newCircle.v5("") "circmargin(0.05in)";
     newCircle.v6("") "circmargin(0.05in)";
     newCircle.v7("") "circmargin(0.05in)";
+    newCircle.v8("") "circmargin(0.05in)";
+
     v1.c - u1.c = anchor2 - anchor1;
     v2.c - u2.c = anchor2 - anchor1;
     v3.c - u3.c = anchor2 - anchor1;
@@ -80,6 +88,7 @@ beginfig(1);
     v5.c - u5.c = anchor2 - anchor1;
     v6.c - u6.c = anchor2 - anchor1;
     v7.c - u7.c = anchor2 - anchor1;
+    v8.c - u8.c = anchor2 - anchor1;
     % ncline(v5)(v6);
     % ncline(v5)(v7);
 
@@ -91,18 +100,20 @@ beginfig(1);
     % D.ne - D.nw = (2unit2, 0);
     % D.ne - D.se = (0, 0.5unit2);
     drawObj(ostem, D);
-    for i = 1 upto 7: drawObj(v[i]); endfor
+    for i = 1 upto 8: drawObj(v[i]); endfor
     ncline(v1)(v2);
     ncline(v1)(v3);
     ncline(v2)(v4);
     ncline(v2)(v5);
     ncline(v3)(v4);
     ncline(v4)(v5);
+    ncline(v2)(v8);
+    ncline(v4)(v8);
     drawzzarrow(ostem, D);
 
     label(btex $u$ etex, v5.c shifted (0.25unit2,-0.18unit2));
     label.lft(btex $\mathcal{O}^{stem}$ etex, ostem.w);
-    label.lft(btex $\mathcal{D}$ etex, D.w);
+    label.lft(btex $\mathcal{D}(u)$ etex, D.w);
 
     %%%%%%%%%%%
     %% figure 3
