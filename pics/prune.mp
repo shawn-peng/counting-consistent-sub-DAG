@@ -34,14 +34,14 @@ beginfig(1);
     %% figure 1
     %%%%%%%%%%%
     unit1 := 0.6in;
-    newCircle.u1("") "circmargin(0.05in)";
-    newCircle.u2("") "circmargin(0.05in)";
-    newCircle.u3("") "circmargin(0.05in)";
-    newCircle.u4("") "circmargin(0.05in)";
-    newCircle.u5("") "circmargin(0.05in)";
-    newCircle.u6("") "circmargin(0.05in)";
-    newCircle.u7("") "circmargin(0.05in)";
-    newCircle.u8("") "circmargin(0.05in)";
+    newCircle.u1("") "circmargin(0.05in)", "framewidth(1.5bp)";
+    newCircle.u2("") "circmargin(0.05in)", "framewidth(1.5bp)";
+    newCircle.u3("") "circmargin(0.05in)", "framewidth(1.5bp)";
+    newCircle.u4("") "circmargin(0.05in)", "framewidth(1.5bp)";
+    newCircle.u5("") "circmargin(0.05in)", "framewidth(1.5bp)";
+    newCircle.u6("") "circmargin(0.05in)", "framewidth(1.5bp)";
+    newCircle.u7("") "circmargin(0.05in)", "framewidth(1.5bp)";
+    newCircle.u8("") "circmargin(0.05in)", "framewidth(1.5bp)";
 
     u1.c = anchor1 shifted (1.2unit1, -0.2unit1);
     u2.c - u1.c = (-0.5unit1, -0.4unit1);
@@ -69,17 +69,17 @@ beginfig(1);
     %% figure 2
     %%%%%%%%%%%
     unit2 = unit1;
-    newCircle.ostem(btex \rule{0in}{0.45in} etex) "circmargin(0.32in)","framestyle(dashed evenly)";
-    newEllipse.D(btex \rule{0.3in}{0in} etex) "fit(true)","circmargin(0.2in)","framestyle(dashed evenly)";
+    newCircle.ostem(btex \rule{0in}{0.45in} etex) "circmargin(0.32in)","framewidth(1.5bp)","framestyle(dashed evenly)";
+    newEllipse.D(btex \rule{0.3in}{0in} etex) "fit(true)","circmargin(0.2in)","framewidth(1.5bp)","framestyle(dashed evenly)";
 
-    newCircle.v1("") "circmargin(0.05in)";
-    newCircle.v2("") "circmargin(0.05in)";
-    newCircle.v3("") "circmargin(0.05in)";
-    newCircle.v4("") "circmargin(0.05in)";
-    newCircle.v5("") "circmargin(0.05in)";
-    newCircle.v6("") "circmargin(0.05in)";
-    newCircle.v7("") "circmargin(0.05in)";
-    newCircle.v8("") "circmargin(0.05in)";
+    newCircle.v1("") "circmargin(0.05in)", "framewidth(1.5bp)";
+    newCircle.v2("") "circmargin(0.05in)", "framewidth(1.5bp)";
+    newCircle.v3("") "circmargin(0.05in)", "framewidth(1.5bp)";
+    newCircle.v4("") "circmargin(0.05in)", "framewidth(1.5bp)";
+    newCircle.v5("") "circmargin(0.05in)", "framewidth(1.5bp)";
+    newCircle.v6("") "circmargin(0.05in)", "framewidth(1.5bp)";
+    newCircle.v7("") "circmargin(0.05in)", "framewidth(1.5bp)";
+    newCircle.v8("") "circmargin(0.05in)", "framewidth(1.5bp)";
 
     v1.c - u1.c = anchor2 - anchor1;
     v2.c - u2.c = anchor2 - anchor1;
@@ -125,17 +125,17 @@ beginfig(1);
     % e: D4
     % g: D5
     newCircle.a(btex $\mathcal{O}^{stem}$ etex)
-        "circmargin(0.4in)","framestyle(dashed evenly)";
+        "circmargin(0.4in)","framewidth(1.5bp)","framestyle(dashed evenly)";
     newCircle.b(btex $\mathcal{D}_{1}$ etex)
-        "circmargin(0.1in)","framestyle(dashed evenly)";
+        "circmargin(0.1in)","framewidth(1.5bp)","framestyle(dashed evenly)";
     newCircle.c(btex $\mathcal{D}_{2}$ etex)
-        "circmargin(0.2in)","framestyle(dashed evenly)";
+        "circmargin(0.2in)","framewidth(1.5bp)","framestyle(dashed evenly)";
     newCircle.d(btex $\mathcal{D}_{3}$ etex)
-        "circmargin(0.05in)","framestyle(dashed evenly)";
+        "circmargin(0.05in)","framewidth(1.5bp)","framestyle(dashed evenly)";
     newCircle.e(btex $\mathcal{D}_{4}$ etex)
-        "circmargin(0.3in)","framestyle(dashed evenly)";
+        "circmargin(0.3in)","framewidth(1.5bp)","framestyle(dashed evenly)";
     newCircle.g(btex $\mathcal{D}_{5}$ etex)
-        "circmargin(0.25in)","framestyle(dashed evenly)";
+        "circmargin(0.25in)","framewidth(1.5bp)","framestyle(dashed evenly)";
 
     a.c = anchor3 shifted (1.2in, -0.6in);
     b.c - a.c = (-1in,-.8in);
