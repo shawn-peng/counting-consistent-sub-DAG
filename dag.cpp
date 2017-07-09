@@ -452,7 +452,7 @@ int DAG::getChildList(int id, IdList &list) const
 //	return 0;
 //}
 
-int DAG::getParentNum(int id)
+int DAG::getParentNum(int id) const
 {
 	Vertex *v = findVertex(id);
 	if (v == NULL)

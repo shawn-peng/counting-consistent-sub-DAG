@@ -178,7 +178,7 @@ public:
 	int getRootNum() const;
 
 	int getChildNum(int id) const;
-	int getParentNum(int id);
+	int getParentNum(int id) const;
 
 	bool isRoot(int id) const;
 	bool isLeaf(int id) const;
