@@ -265,7 +265,8 @@ int DAG::addEdge(int vstart, int vend)
 
 	if (vsi == vindex.end() || vei == vindex.end())
 	{
-		return -1;
+		//return -1;
+		exit(-1);
 	}
 
 	vsi->second->addChild(vend);
