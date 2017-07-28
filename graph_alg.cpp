@@ -40,7 +40,7 @@ struct PathInfo
 {
 	int depth;
 	int depthParent;
-	map<int, IdList> pathMap; //map<MPnode, children on path to MPnode>
+	map<int, IdList> pathMap; //map<MPnode, children of the roots on path to MPnode>
 	PathInfo() : depth(0), depthParent(0) {}
 };
 
