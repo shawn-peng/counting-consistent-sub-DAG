@@ -453,6 +453,18 @@ DAG *create_dag_from_file(const char *filename)
 			g->addVertex(vstart);
 			g->addVertex(vend);
 
+			IdList children;
+			g->getChildList(vstart, children);
+			FOR_EACH_IN_CONTAINER(chit, children)
+			{
+				if (*chit == vend)
+				{
+					printf("ERROR: %07d -> %07d"
+						" is duplicated.\n",
+						vstart, vend);
+					exit(-1);
+				}
+			}
 			g->addEdge(vstart, vend);
 
 			//g->print();
