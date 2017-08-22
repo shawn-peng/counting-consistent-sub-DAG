@@ -1612,7 +1612,7 @@ number_t count_consistent_subdag_for_independent_subdag_nonrecursive(DAG *g, boo
 
 		extend_subdags.pop_front();
 
-		if (recursion_depth <= 20)
+		//if (recursion_depth <= 20)
 		{
 			for (int di = 1; di < recursion_depth; di++)
 			{
@@ -1847,7 +1847,7 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 	//}
 	else
 	{
-		if (recursion_depth <= 20)
+		//if (recursion_depth <= 20)
 		{
 			for (int di = 1; di < recursion_depth; di++)
 			{
