@@ -17,7 +17,6 @@
 #include <iostream>
 #include <algorithm>
 #include <queue>
-#include <set>
 #include <map>
 #include <unordered_map>
 #include <sstream>
@@ -57,25 +56,8 @@ struct ParentInfo
 
 struct PathNode
 {
-	int id;
 	int depth;
-	//Vertex *v;
-	
-	bool operator <(const PathNode &rhs) const
-	{
-		if (depth < rhs.depth)
-		{
-			return true;
-		}
-		else if (depth == rhs.depth)
-		{
-			return id < rhs.id;
-		}
-		else
-		{
-			return false;
-		}
-	}
+	Vertex *v;
 };
 
 
@@ -775,42 +757,42 @@ int gen_mpnode_pathinfo(DAG *g, IdList mpnodes)
 	return 0;
 }
 
-// list approach is too slow
-//int add_node_to_pathnode_queue(list<PathNode> &pl, PathNode x)
-//{
-//	//pl is sorted
-//	//first by depth (decreasing) then by id (increasing)
-//	FOR_EACH_IN_CONTAINER(iter, pl)
-//	{
-//		if (iter->depth > x.depth)
-//		{
-//			continue;
-//		}
-//		else if (iter->depth == x.depth)
-//		{
-//			if (iter->v->getId() < x.v->getId())
-//			{
-//				continue;
-//			}
-//			else if (iter->v->getId() == x.v->getId())
-//			{
-//				return 0;
-//			}
-//			else
-//			{
-//				pl.insert(iter, x);
-//				return 0;
-//			}
-//		}
-//		else
-//		{
-//			pl.insert(iter, x);
-//			return 0;
-//		}
-//	}
-//	pl.insert(pl.end(), x);
-//	return 0;
-//}
+
+int add_node_to_pathnode_queue(list<PathNode> &pl, PathNode x)
+{
+	//pl is sorted
+	//first by depth (decreasing) then by id (increasing)
+	FOR_EACH_IN_CONTAINER(iter, pl)
+	{
+		if (iter->depth > x.depth)
+		{
+			continue;
+		}
+		else if (iter->depth == x.depth)
+		{
+			if (iter->v->getId() < x.v->getId())
+			{
+				continue;
+			}
+			else if (iter->v->getId() == x.v->getId())
+			{
+				return 0;
+			}
+			else
+			{
+				pl.insert(iter, x);
+				return 0;
+			}
+		}
+		else
+		{
+			pl.insert(iter, x);
+			return 0;
+		}
+	}
+	pl.insert(pl.end(), x);
+	return 0;
+}
 
 // Still DAG decomposition
 /*int find_independent_subdag_root(DAG *g, int id)
@@ -845,96 +827,86 @@ int gen_mpnode_pathinfo(DAG *g, IdList mpnodes)
 	return id;
 }*/
 
-//int find_root_consistent_to_vertices(DAG *g, IdList nodes)
-//{
-//	// profiling
-//	func_calls[__FUNCTION__]++;
-//
-//	//list<PathNode> paths_queue;
-//	priority_queue<PathNode> paths_queue;
-//
-//	PathNode node;
-//
-//	FOR_EACH_IN_CONTAINER(iter, nodes)
-//	{
-//		Vertex *v = g->findVertex(*iter);
-//		node.id = v->getId();
-//
-//		PathInfo *pinfo = get_path_info(v);
-//		node.depth = pinfo->depth;
-//
-//		//add_node_to_pathnode_queue(paths_queue, node);
-//		paths_queue.push(node);
-//	}
-//
-//	node = paths_queue.top();
-//	int id = node.id;
-//	paths_queue.pop();
-//
-//	ParentNumMap &parent_num_map = get_parent_info(g).parentNumMap;
-//
-//	while (!paths_queue.empty() ||
-//			parent_num_map[id] > 1)
-//	{
-//		if (parent_num_map[id] == 0)
-//		{
-//			// all nodes left in paths queue are root
-//			id = -1;
-//			break;
-//		}
-//		//VertexDepthInfo &entry = paths_queue.front();
-//		IdList parents;
-//		g->getParentList(id, parents);
-//		FOR_EACH_IN_CONTAINER(iter, parents)
-//		{
-//			//VertexDepthInfo node;
-//			//node.v = g->findVertex(*iter);
-//			node.id = *iter;
-//			//shared_ptr<PathInfo> pinfo = static_pointer_cast<PathInfo>(g->getPrivData().dptr);
-//
-//			Vertex *v = g->findVertex(*iter);
-//			PathInfo *pinfo = get_path_info(v);
-//
-//			node.depth = pinfo->depth;
-//			//add_node_to_pathnode_queue(paths_queue, node);
-//			paths_queue.push(node);
-//			//printf("push depth %d: %07d\n", node.depth, node.v->getId());
-//		}
-//		node = paths_queue.top();
-//		id = node.id;
-//		paths_queue.pop();
-//		printf("pop depth %d: %07d\n", node.depth, node.id);
-//	}
-//
-//	return id;
-//}
+int find_root_consistent_to_vertices(DAG *g, IdList nodes)
+{
+	// profiling
+	func_calls[__FUNCTION__]++;
+
+	list<PathNode> paths_queue;
+
+	PathNode node;
+
+	FOR_EACH_IN_CONTAINER(iter, nodes)
+	{
+		Vertex *v = g->findVertex(*iter);
+		node.v = v;
+
+		PathInfo *pinfo = get_path_info(v);
+		node.depth = pinfo->depth;
+
+		add_node_to_pathnode_queue(paths_queue, node);
+	}
+
+	node = paths_queue.front();
+	int id = node.v->getId();
+	paths_queue.pop_front();
+
+	ParentNumMap &parent_num_map = get_parent_info(g).parentNumMap;
+
+	while (!paths_queue.empty() ||
+			parent_num_map[id] > 1)
+	{
+		if (parent_num_map[id] == 0)
+		{
+			// all nodes left in paths queue are root
+			id = -1;
+			break;
+		}
+		//VertexDepthInfo &entry = paths_queue.front();
+		IdList parents;
+		g->getParentList(id, parents);
+		FOR_EACH_IN_CONTAINER(iter, parents)
+		{
+			//VertexDepthInfo node;
+			node.v = g->findVertex(*iter);
+			shared_ptr<PathInfo> pinfo = static_pointer_cast<PathInfo>(node.v->getPrivData().dptr);
+			node.depth = pinfo->depth;
+			add_node_to_pathnode_queue(paths_queue, node);
+			//printf("push depth %d: %07d\n", node.depth, node.v->getId());
+		}
+		node = paths_queue.front();
+		id = node.v->getId();
+		paths_queue.pop_front();
+		//printf("pop depth %d: %07d\n", node.depth, node.v->getId());
+	}
+
+	return id;
+}
 
 int find_roots_consistent_to_vertices(DAG *g, IdList nodes, IdList &roots)
 {
 	// profiling
 	func_calls[__FUNCTION__]++;
 
-	//list<PathNode> paths_queue;
-	set<PathNode> paths_queue;
+	list<PathNode> paths_queue;
 
 	PathNode node;
 
 	FOR_EACH_IN_CONTAINER(iter, nodes)
 	{
-		node.id = *iter;
-
 		Vertex *v = g->findVertex(*iter);
+		node.v = v;
+
 		PathInfo *pinfo = get_path_info(v);
 		node.depth = pinfo->depth;
 
 		// node are inserted with sorting of depth
-		//add_node_to_pathnode_queue(paths_queue, node);
-		paths_queue.insert(node);
+		add_node_to_pathnode_queue(paths_queue, node);
 	}
 
-	node = *paths_queue.rbegin();
-	int id = node.id;
-	paths_queue.erase(--paths_queue.end());
+	node = paths_queue.front();
+	int id = node.v->getId();
+	paths_queue.pop_front();
 
 	ParentNumMap &parent_num_map = get_parent_info(g).parentNumMap;
 
@@ -952,30 +924,23 @@ int find_roots_consistent_to_vertices(DAG *g, IdList nodes, IdList &roots)
 		g->getParentList(id, parents);
 		FOR_EACH_IN_CONTAINER(iter, parents)
 		{
-			node.id = *iter;
-			//shared_ptr<PathInfo> pinfo = static_pointer_cast<PathInfo>(g->getPrivData().dptr);
-
-			Vertex *v = g->findVertex(node.id);
-			PathInfo *pinfo = get_path_info(v);
-
+			//VertexDepthInfo node;
+			node.v = g->findVertex(*iter);
+			shared_ptr<PathInfo> pinfo = static_pointer_cast<PathInfo>(node.v->getPrivData().dptr);
 			node.depth = pinfo->depth;
-			//add_node_to_pathnode_queue(paths_queue, node);
-			paths_queue.insert(node);
+			add_node_to_pathnode_queue(paths_queue, node);
 			//printf("push depth %d: %07d\n", node.depth, node.v->getId());
 		}
-		node = *paths_queue.rbegin();
-		id = node.id;
-		//paths_queue.pop();
-		paths_queue.erase(--paths_queue.end());
-		//printf("pop depth %d: %07d\n", node.depth, node.id);
+		node = paths_queue.front();
+		id = node.v->getId();
+		paths_queue.pop_front();
+		//printf("pop depth %d: %07d\n", node.depth, node.v->getId());
 	}
 
-	roots.push_front(id);
-	//FOR_EACH_IN_CONTAINER(iter, paths_queue)
-	while (!paths_queue.empty())
+	roots.push_back(id);
+	FOR_EACH_IN_CONTAINER(iter, paths_queue)
 	{
-		roots.push_front(paths_queue.rbegin()->id);
-		paths_queue.erase(--paths_queue.end());
+		roots.push_back(iter->v->getId());
 	}
 
 	return roots.size();
@@ -987,9 +952,6 @@ int decompose_dag(DAG *g, const IdList &mpnodes, list<DAG> &subdags)
 {
 	// profiling
 	func_calls[__FUNCTION__]++;
-
-	//printf("trying decomposing dag: \n");
-	//g->print();
 
 	//int realroot = g->getFirstRoot();
 	IdList realroots;
@@ -1036,6 +998,7 @@ int decompose_dag(DAG *g, const IdList &mpnodes, list<DAG> &subdags)
 			newroots.clear();
 			int ret = find_roots_consistent_to_vertices(
 					&pathinfo_dag, covered_mpnodes, newroots);
+			//printf("independent root %07d for node %07d.\n", newrootid, id);
 
 			// get map of paths to all mpnodes, check consistency of
 			// subdag with roots
@@ -1649,7 +1612,7 @@ number_t count_consistent_subdag_for_independent_subdag_nonrecursive(DAG *g, boo
 
 		extend_subdags.pop_front();
 
-		//if (recursion_depth <= 20)
+		if (recursion_depth <= 20)
 		{
 			for (int di = 1; di < recursion_depth; di++)
 			{
@@ -1884,7 +1847,7 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 	//}
 	else
 	{
-		//if (recursion_depth <= 20)
+		if (recursion_depth <= 20)
 		{
 			for (int di = 1; di < recursion_depth; di++)
 			{
