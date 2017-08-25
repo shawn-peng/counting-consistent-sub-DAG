@@ -30,6 +30,7 @@ static const bool debugging = false;
 
 static const bool verify_hash = false;
 
+using namespace std;
 using namespace NS_DAG;
 
 typedef mpz_class number_t;
@@ -40,13 +41,13 @@ struct PathInfo
 {
 	int depth;
 	int depthParent;
-	map<int, IdList> pathMap; //map<MPnode, children of the roots on path to MPnode>
+	std::map<int, IdList> pathMap; //map<MPnode, children of the roots on path to MPnode>
 	PathInfo() : depth(0), depthParent(0) {}
 };
 
 
-typedef unordered_map<int, int> ParentNumMap;
-typedef unordered_map<int, IdList> ParentMap;
+typedef std::unordered_map<int, int> ParentNumMap;
+typedef std::unordered_map<int, IdList> ParentMap;
 
 struct ParentInfo
 {
@@ -61,15 +62,15 @@ struct PathNode
 };
 
 
-static unordered_map<string, number_t> hash_table;
+static std::unordered_map<std::string, number_t> hash_table;
 static int hash_tries = 0;
 static int hash_hits = 0;
 
-static map<string, int> func_calls;
+static std::map<std::string, int> func_calls;
 
 
 
-void print_subdag_list(const list<DAG> &glist)
+void print_subdag_list(const std::list<DAG> &glist)
 {
 	FOR_EACH_IN_CONTAINER(lsit, glist)
 	{
@@ -78,7 +79,7 @@ void print_subdag_list(const list<DAG> &glist)
 	}
 }
 
-void print_subdag_list(const list<DAG> &glist, ConstPrivDataFn fn)
+void print_subdag_list(const std::list<DAG> &glist, ConstPrivDataFn fn)
 {
 	FOR_EACH_IN_CONTAINER(lsit, glist)
 	{
@@ -119,7 +120,7 @@ int print_privdata_num(const PrivDataUnion *data)
 	{
 		num = 0;
 	}
-	stringstream ss;
+	std::stringstream ss;
 	ss << num;
 	printf("%s", ss.str().c_str());
 	return ss.str().size();
@@ -133,8 +134,8 @@ int print_privdata_ptr(const PrivDataUnion *data)
 int print_privdata_pathinfo(const PrivDataUnion *data)
 {
 	//shared_ptr<PathInfo> pinfo = static_pointer_cast<PathInfo>(data->dptr);
-	shared_ptr<PathInfo> pinfo = static_pointer_cast<PathInfo>(data->dptr);
-	map<int, IdList> &pmap = pinfo->pathMap;
+	std::shared_ptr<PathInfo> pinfo = std::static_pointer_cast<PathInfo>(data->dptr);
+	std::map<int, IdList> &pmap = pinfo->pathMap;
 	printf("{\n");
 	FOR_EACH_IN_CONTAINER(iter, pmap)
 	{
@@ -151,7 +152,7 @@ int print_privdata_pathinfo(const PrivDataUnion *data)
 
 number_t &getNumFromPrivData(PrivDataUnion &data)
 {
-	shared_ptr<void> &p = data.dptr;
+	std::shared_ptr<void> &p = data.dptr;
 	if (!p)
 	{
 		p = make_shared<number_t>(0);
