@@ -11,5 +11,6 @@ if [ -z "$level" ]; then
 	level=8
 fi
 
-grep "\[[1-${level}]\]" ${log} && tail -f ${log} |grep "\[[1-${level}]\]"
+grep "\[[1-${level}]\]" ${log}
+tail -f ${log} |grep "\[[1-${level}]\]"
 

@@ -468,7 +468,7 @@ int get_signature(DAG *g, string &str)
 }
 
 
-int get_descendents_subdag(DAG *g, int id, DAG &subdag)
+int get_descendants_subdag(DAG *g, int id, DAG &subdag)
 {
 	if (subdag.getVertexNum() == 0)
 	{
@@ -488,14 +488,14 @@ int get_descendents_subdag(DAG *g, int id, DAG &subdag)
 	FOR_EACH_IN_CONTAINER(iter, children)
 	{
 		int cid = *iter;
-		get_descendents_subdag(g, cid, subdag);
+		get_descendants_subdag(g, cid, subdag);
 		subdag.addEdge(id, cid);
 	}
 
 	return 0;
 }
 
-int get_path_to_root(DAG *g, int id, DAG &subdag)
+int get_ancestors_subdag(DAG *g, int id, DAG &subdag)
 {
 	if (g->isRoot(id))
 	{
@@ -515,7 +515,7 @@ int get_path_to_root(DAG *g, int id, DAG &subdag)
 	FOR_EACH_IN_CONTAINER(iter, parents)
 	{
 		int pid = *iter;
-		get_path_to_root(g, pid, subdag);
+		get_ancestors_subdag(g, pid, subdag);
 		subdag.addEdge(pid, id);
 	}
 
@@ -523,7 +523,7 @@ int get_path_to_root(DAG *g, int id, DAG &subdag)
 }
 
 ////D(u), get the smallest consistent sub-DAG for vertex u with ID(id)
-//int get_path_to_root(DAG *g, int id, DAG &subdag)
+//int get_ancestors_subdag(DAG *g, int id, DAG &subdag)
 //{
 //	// may need several path
 //	//int rootid = g->getFirstRoot();
@@ -563,7 +563,7 @@ int get_path_to_root(DAG *g, int id, DAG &subdag)
 //		}
 //		else
 //		{
-//			get_path_to_root(g, pid, subdag);
+//			get_ancestors_subdag(g, pid, subdag);
 //		}
 //	}
 //	return 0;
@@ -748,7 +748,7 @@ int gen_mpnode_pathinfo(DAG *g, IdList mpnodes)
 	FOR_EACH_IN_CONTAINER(iter, mpnodes)
 	{
 		DAG pathdag;
-		get_path_to_root(g, *iter, pathdag);
+		get_ancestors_subdag(g, *iter, pathdag);
 		add_path_to_pathmap(g, *iter, pathdag);
 	}
 
@@ -1461,7 +1461,7 @@ number_t count_consistent_subdag_adding_subdag(DAG *g, IdList mpnodes, const DAG
 	// even for multi-root DAG case, the subdag still have only one root
 	int srid = subdag.getFirstRoot();
 	DAG pathdag;
-	get_path_to_root(g, srid, pathdag);
+	get_ancestors_subdag(g, srid, pathdag);
 	//pathdag.setSingleRoot(rootid);
 	//printf("--------------------------------------------\n");
 	//printf("Fixed path to root of node: %07d\n", srid);
@@ -1671,16 +1671,46 @@ number_t count_consistent_subdag_for_independent_subdag_nonrecursive(DAG *g, boo
 	return total;
 }
 
+void get_subproblems_splitted_by_vertex(DAG *g, int id, DAG &g1, DAG &g2)
+{
+	g1 = *g;
+	g2 = *g;
+
+	DAG ancestors, descendants;
+	get_ancestors_subdag(&g1, id, ancestors);
+	g1.removeSubdag(ancestors);
+	get_descendants_subdag(&g2, id, descendants);
+	g2.removeSubdag(descendants);
+
+	return;
+}
+void get_subproblems_splitted_by_vertex(DAG *g, int id, std::pair<DAG, DAG> &subproblems)
+{
+	DAG &m1 = subproblems.first;
+	DAG &m2 = subproblems.second;
+	m1 = *g;
+	m2 = *g;
+
+	DAG ancestors, descendants;
+	get_ancestors_subdag(&m1, id, ancestors);
+	m1.removeSubdag(ancestors);
+	get_descendants_subdag(&m2, id, descendants);
+	m2.removeSubdag(descendants);
+
+	return;
+}
+
 pair<int, int> analyze_subproblem_scales_MPV(DAG *g, int id)
 {
-	DAG m1(*g), m2(*g);
+	DAG m1, m2;
+	get_subproblems_splitted_by_vertex(g, id, m1, m2);
 
-	DAG ancestors, descendents;
-	get_path_to_root(&m1, id, ancestors);
-	m1.removeSubdag(ancestors);
-	get_descendents_subdag(&m2, id, descendents);
-	m2.removeSubdag(descendents);
-	//m2.removeSubdagRootAt(id);
+	//DAG m1(*g), m2(*g);
+	//DAG ancestors, descendants;
+	//get_ancestors_subdag(&m1, id, ancestors);
+	//m1.removeSubdag(ancestors);
+	//get_descendants_subdag(&m2, id, descendants);
+	//m2.removeSubdag(descendants);
 
 	int s1, s2;
 	IdList mpnodesA, mpnodesD;
@@ -1695,14 +1725,15 @@ pair<int, int> analyze_subproblem_scales_MPV(DAG *g, int id)
 
 pair<int, int> analyze_subproblem_scales_Bound(DAG *g, int id)
 {
-	DAG m1(*g), m2(*g);
+	DAG m1, m2;
+	get_subproblems_splitted_by_vertex(g, id, m1, m2);
 
-	DAG ancestors, descendents;
-	get_path_to_root(&m1, id, ancestors);
-	m1.removeSubdag(ancestors);
-	get_descendents_subdag(&m2, id, descendents);
-	m2.removeSubdag(descendents);
-	//m2.removeSubdagRootAt(id);
+	//DAG m1(*g), m2(*g);
+	//DAG ancestors, descendants;
+	//get_ancestors_subdag(&m1, id, ancestors);
+	//m1.removeSubdag(ancestors);
+	//get_descendants_subdag(&m2, id, descendants);
+	//m2.removeSubdag(descendants);
 
 	int s1, s2;
 	int e1, n1, r1;
@@ -1726,12 +1757,11 @@ pair<int, int> analyze_subproblem_scales_Bound_double_direction(DAG *g, int id, 
 {
 	DAG m1(*g), m2(*g);
 
-	DAG ancestors, descendents;
-	get_path_to_root(&m1, id, ancestors);
+	DAG ancestors, descendants;
+	get_ancestors_subdag(&m1, id, ancestors);
 	m1.removeSubdag(ancestors);
-	get_descendents_subdag(&m2, id, descendents);
-	m2.removeSubdag(descendents);
-	//m2.removeSubdagRootAt(id);
+	get_descendants_subdag(&m2, id, descendants);
+	m2.removeSubdag(descendants);
 
 	int s1, s2;
 	int e1, n1, r1;
@@ -1783,6 +1813,63 @@ pair<int, int> analyze_subproblem_scales_Bound_double_direction(DAG *g, int id, 
 bool comp_scale_pairs_sum(std::pair<int, int> s1, std::pair<int, int> s2)
 {
 	return ((long long)s1.first + s1.second) < ((long long)s2.first + s2.second);
+}
+
+int pivoting_by_Bound(DAG *g, std::pair<DAG, DAG> &best_sub_problems)
+{
+	int best_node = 0;
+
+	IdList nodes;
+	g->getVertexList(nodes);
+
+	// find the best node to split count
+	pair<int, int> min_scales = make_pair(INT_MAX, INT_MAX);
+	//FOR_EACH_IN_CONTAINER(iter, mpnodes)
+	FOR_EACH_IN_CONTAINER(iter, nodes)
+	{
+		int id = *iter;
+		pair<DAG, DAG> temp_subs_problems;
+		pair<int, int> scales =
+			analyze_subproblem_scales_Bound_double_direction(
+					g, id, temp_subs_problems);
+		//if (scales.first < scales.second)
+		//{
+		//	swap(scales.first, scales.second);
+		//}
+
+		if (comp_scale_pairs_sum(scales, min_scales))
+		{
+			min_scales = scales;
+			best_node = id;
+			best_sub_problems = temp_subs_problems;
+		}
+	}
+
+	return best_node;
+}
+
+int pivoting_by_vertex_degree(DAG *g, std::pair<DAG, DAG> &best_sub_problems)
+{
+	int best_node = 0;
+
+	IdList nodes;
+	g->getVertexList(nodes);
+
+	int max_degree = 0;
+	FOR_EACH_IN_CONTAINER(iter, nodes)
+	{
+		int id = *iter;
+		int d = g->getParentNum(id) + g->getChildNum(id);
+		if (d > max_degree)
+		{
+			max_degree = d;
+			best_node = id;
+		}
+	}
+
+	get_subproblems_splitted_by_vertex(g, best_node, best_sub_problems);
+
+	return best_node;
 }
 
 // g(u), calculate the number of consistent sub-DAGs in a DAG g
@@ -1857,48 +1944,24 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 					recursion_depth, mpnodes.size());
 		}
 
-		pair<int, int> min_scales = make_pair(INT_MAX, INT_MAX);
-		//int min_scales = INT_MAX;
-		int best_node = 0;
-		pair<DAG, DAG> best_subs_problems;
-		// find the best node to split count
-		//FOR_EACH_IN_CONTAINER(iter, mpnodes)
-		FOR_EACH_IN_CONTAINER(iter, nodes)
-		{
-			int vid = *iter;
-			pair<DAG, DAG> temp_subs_problems;
-			pair<int, int> scales =
-				analyze_subproblem_scales_Bound_double_direction(
-						g, vid, temp_subs_problems);
-			//if (scales.first < scales.second)
-			//{
-			//	swap(scales.first, scales.second);
-			//}
+		pair<DAG, DAG> best_sub_problems;
 
-			if (comp_scale_pairs_sum(scales, min_scales))
-			{
-				min_scales = scales;
-				best_node = vid;
-				best_subs_problems = temp_subs_problems;
-			}
-		}
-
-		//DAG mA(*g), mD(*g);
-		int id = best_node;
+		int id = pivoting_by_vertex_degree(g, best_sub_problems);
 
 		//printf("partitioning with MP node %d\n", id);
-		//DAG ancestors, descendents;
-		//get_path_to_root(g, id, ancestors);
+		//DAG ancestors, descendants;
+		//get_ancestors_subdag(g, id, ancestors);
 		//mA.removeSubdag(ancestors);
-		//get_descendents_subdag(g, id, descendents);
-		//mD.removeSubdag(descendents);
+		//get_descendants_subdag(g, id, descendants);
+		//mD.removeSubdag(descendants);
 
 		IdList roots1, roots2;
-		DAG &mA = best_subs_problems.first;
-		DAG &mD = best_subs_problems.second;
+
+		DAG &mA = best_sub_problems.first;
 		mA.getRootList(roots1);
-		mD.getRootList(roots2);
 		number_t num1 = count_consistent_subdag(&mA, roots1, using_hash);
+		//roots1.clear();
+
 		DAG rmA(mA);
 		rmA.reverse();
 		rmA.getRootList(roots1);
@@ -1908,7 +1971,7 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 			cout << "found a BUG:" << endl;
 			cout << "This is the subdag:" << endl;
 			g->print(print_privdata_num);
-			cout << "pivoting node: " << best_node << endl;
+			cout << "pivoting node: " << id << endl;
 			cout << "g[-A]:" << endl;
 			mA.print(print_privdata_num);
 			cout << "g[-A].reversed:" << endl;
@@ -1921,7 +1984,11 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 			exit(2);
 		}
 
+		DAG &mD = best_sub_problems.second;
+		mD.getRootList(roots2);
 		number_t num2 = count_consistent_subdag(&mD, roots2, using_hash);
+		//roots2.clear();
+
 		DAG rmD(mD);
 		rmD.reverse();
 		rmD.getRootList(roots2);
@@ -1931,7 +1998,7 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 			cout << "found a BUG:" << endl;
 			cout << "This is the subdag:" << endl;
 			g->print(print_privdata_num);
-			cout << "pivoting node: " << best_node << endl;
+			cout << "pivoting node: " << id << endl;
 			cout << "g[-D]:" << endl;
 			mD.print(print_privdata_num);
 			cout << "g[-D].reversed:" << endl;
@@ -2417,7 +2484,7 @@ int reduce_dag(DAG *g)
 	DAG pathdag;
 	FOR_EACH_IN_CONTAINER(nodeit, mpnodes)
 	{
-		get_path_to_root(&pathinfo_dag, *nodeit, pathdag);
+		get_ancestors_subdag(&pathinfo_dag, *nodeit, pathdag);
 	}
 
 	// remove this path, then what's left should be all trees
