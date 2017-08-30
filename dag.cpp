@@ -250,6 +250,7 @@ int DAG::addVertex(int id)
 	VertexMapIter vi = vindex.find(id);
 	if (vi != vindex.end())
 	{
+		printf("BUG: adding duplicated vertex.\n");
 		return 0;
 	}
 
