@@ -1962,7 +1962,7 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 		DAG &mA = best_sub_problems.first;
 		mA.getRootList(roots1);
 		number_t num1 = count_consistent_subdag(&mA, roots1, using_hash);
-		//roots1.clear();
+		roots1.clear();
 
 		DAG rmA(mA);
 		rmA.reverse();
@@ -1989,7 +1989,7 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 		DAG &mD = best_sub_problems.second;
 		mD.getRootList(roots2);
 		number_t num2 = count_consistent_subdag(&mD, roots2, using_hash);
-		//roots2.clear();
+		roots2.clear();
 
 		DAG rmD(mD);
 		rmD.reverse();
@@ -2341,10 +2341,10 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 		// even when there are actually multipule roots in the subdag
 		int srid = subroots.front();
 
-		// just add the root node, so that when laterly calculate
-		// with count_consistent_subdag_for_independent_subdag
-		// function, the mpnodes from this subdag won't be considered.
-		modified.addVertex(srid);
+		// ****BUG****: didn't remove deprecated code, this operation is already done
+		// in later process
+		//modified.addVertex(srid);
+
 		PrivDataUnion priv;
 		//priv.ddouble = num;
 		setNumToPrivData(priv, num);
@@ -2358,6 +2358,11 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 			parent = parent_map[srid].front();
 			// find where the parent is
 			DAG *parent_subdag = find_subdag_has(parent, decomp_subdags);
+
+			// just add the root node, so that when laterly calculate
+			// with count_consistent_subdag_for_independent_subdag
+			// function, the mpnodes from this subdag won't be considered.
+
 			//if (modified.checkVertex(parent))
 			if (parent_subdag == NULL)
 			{// it is in the root subdag
