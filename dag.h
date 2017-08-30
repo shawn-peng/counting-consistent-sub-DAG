@@ -109,16 +109,18 @@ public:
 	void clearSubkey();
 };
 
-typedef std::list<Vertex> VertexList;
+//typedef std::list<Vertex> VertexList;
+typedef std::list<Vertex, boost::fast_pool_allocator<Vertex>> VertexList;
 typedef VertexList::iterator VertexIter;
 
 class DAG
 {
 private:
 	VertexList vertices; //list of vertices
-	//typedef std::map<int, VertexIter, std::less<int>,
-	//	fast_pool_allocator<std::pair<const int, VertexIter> > VertexMap;
-	typedef std::map<int, VertexIter> VertexMap;
+	//typedef std::map<int, VertexIter> VertexMap;
+	typedef std::map<int, VertexIter, std::less<int>,
+		boost::fast_pool_allocator<std::pair<const int, VertexIter>>
+	> VertexMap;
 	typedef VertexMap::iterator VertexMapIter;
 
 	VertexMap vindex; //index to find vertex with certain id in the list
