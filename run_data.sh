@@ -11,11 +11,11 @@ fi
 
 if [ -z "$categ" ]; then
 	#run both
-	{ time ./graph_alg data/ontologies/depths/$dag/all_${dag}${level}_rel.txt; } &> log/${dag}${level}_all.log &
-	{ time ./graph_alg data/ontologies/depths/$dag/used_${dag}${level}_rel.txt; } &> log/${dag}${level}_used.log &
+	{ time ./graph_alg data/ontologies/levels/$dag/all_${dag}${level}_rel.txt; } &> log/${dag}${level}_all.log &
+	{ time ./graph_alg data/ontologies/levels/$dag/used_${dag}${level}_rel.txt; } &> log/${dag}${level}_used.log &
 elif [[ "$categ" == "used" ]]; then
-	{ time ./graph_alg data/ontologies/depths/$dag/used_${dag}${level}_rel.txt; } &> log/${dag}${level}_used.log &
+	{ time ./graph_alg data/ontologies/levels/$dag/used_${dag}${level}_rel.txt; } &> log/${dag}${level}_used.log &
 elif [[ "$categ" == "all" ]]; then
-	{ time ./graph_alg data/ontologies/depths/$dag/all_${dag}${level}_rel.txt; } &> log/${dag}${level}_all.log &
+	{ time ./graph_alg data/ontologies/levels/$dag/all_${dag}${level}_rel.txt; } &> log/${dag}${level}_all.log &
 fi
 
