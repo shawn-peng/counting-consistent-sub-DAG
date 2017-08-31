@@ -16,6 +16,8 @@ if [ $? -ne 0 ]; then
 	exit 1
 fi
 
+trap "rm -f $lckf && echo 'Quit testing' && exit 0" SIGINT
+
 for gfile in $filelist;
 do
 	#echo $gfile
