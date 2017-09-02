@@ -1111,7 +1111,10 @@ int enum_possibilities(DAG *g, DAG cur_subdag, list<Edge> fringe, IdList needed,
 	}
 	else
 	{
-		cur_subdag.addVertex(vid);
+		if (!cur_subdag.checkVertex(vid))
+		{
+			cur_subdag.addVertex(vid);
+		}
 		//just add one Edge
 		cur_subdag.addEdge(edge.first, vid);
 	}
@@ -2384,6 +2387,7 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 			//if (modified.checkVertex(parent))
 			if (parent_subdag == NULL)
 			{// it is in the root subdag
+				assert(!modified.checkVertex(srid));
 				modified.addVertex(srid);
 				modified.addEdge(parent, srid);
 				modified.setPrivData(srid, priv);
@@ -2391,6 +2395,7 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 			}
 			else
 			{// in some later subdag, which will be counted and added later
+				assert(!parent_subdag->checkVertex(srid));
 				parent_subdag->addVertex(srid);
 				parent_subdag->addEdge(parent, srid);
 				parent_subdag->setPrivData(srid, priv);
@@ -2400,6 +2405,7 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 		else
 		{
 			// otherwise, add as an independent root
+			assert(!modified.checkVertex(srid));
 			modified.addVertex(srid);
 			modified.addToRootList(srid);
 			modified.setPrivData(srid, priv);
