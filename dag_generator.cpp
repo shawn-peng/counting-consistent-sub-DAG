@@ -450,8 +450,14 @@ DAG *create_dag_from_file(const char *filename)
 		}
 		else
 		{
-			g->addVertex(vstart);
-			g->addVertex(vend);
+			if (!g->checkVertex(vstart))
+			{
+				g->addVertex(vstart);
+			}
+			if (!g->checkVertex(vend))
+			{
+				g->addVertex(vend);
+			}
 
 			IdList children;
 			g->getChildList(vstart, children);
