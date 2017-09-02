@@ -1950,8 +1950,8 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 
 		pair<DAG, DAG> best_sub_problems;
 
-		//int id = pivoting_by_vertex_degree(g, best_sub_problems);
-		int id = pivoting_by_Bound(g, best_sub_problems);
+		int id = pivoting_by_vertex_degree(g, best_sub_problems);
+		//int id = pivoting_by_Bound(g, best_sub_problems);
 
 		//printf("partitioning with MP node %d\n", id);
 		//DAG ancestors, descendants;
