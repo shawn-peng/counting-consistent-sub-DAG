@@ -1,9 +1,9 @@
 # Algorithm to count the number of consistent sub-DAGs in a DAG(Directed Acyclic Graph)
 
 ## Usage
-To run the program, execute "./graph_alg <FILE> [ROOTID]", where "<FILE>" is the DAG
-datafile to be used. If the <FILE> argument isn't given, the default file used is
-"./data/Graph/mini-tree.txt". Then "[ROOTID]" is the id of root for the DAG.
+To run the program, execute "./graph_alg FILE", where "FILE" is the DAG
+datafile to be used. If the FILE argument isn't given, the default file used is
+"./data/Graph/mini-tree.txt".
 
 ## Detail Explanation
 https://github.com/shawn-peng/counting-consistent-sub-DAG/blob/master/shawn_peng_proj.pdf
