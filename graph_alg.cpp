@@ -150,7 +150,7 @@ int print_privdata_pathinfo(const PrivDataUnion *data)
 }
 
 
-number_t &getNumFromPrivData(PrivDataUnion &data)
+number_t &get_num_from_priv_data(PrivDataUnion &data)
 {
 	shared_ptr<void> &p = data.dptr;
 	if (!p)
@@ -163,7 +163,7 @@ number_t &getNumFromPrivData(PrivDataUnion &data)
 }
 
 // will alloc a new object
-void setNumToPrivData(PrivDataUnion &data, const number_t &num)
+void set_num_to_priv_data(PrivDataUnion &data, const number_t &num)
 {
 	//void *p = data.dptr;
 	//if (p)
@@ -1261,7 +1261,7 @@ int remove_subdag_to_become_trees(DAG *g, int rootid, list<DAG> &subdags)
 number_t count_consistent_subdag_tree(DAG *g, int rootid)
 {
 	PrivDataUnion data = g->getPrivData(rootid);
-	number_t total = getNumFromPrivData(data);
+	number_t total = get_num_from_priv_data(data);
 	if (total == 0)
 	{
 		total = 2;
@@ -1312,14 +1312,14 @@ void clear_nonleaf_counts(DAG *g, int id)
 	if (children.size() != 0)
 	{
 		PrivDataUnion data = g->getPrivData(id);
-		number_t &num = getNumFromPrivData(data);
+		number_t &num = get_num_from_priv_data(data);
 		if (num == 0)
 		{
 			// already cleaned following another path
 			return;
 		}
 		num = 0;
-		//setNumToPrivData(data, num);
+		//set_num_to_priv_data(data, num);
 		g->setPrivData(id, data);
 		FOR_EACH_IN_CONTAINER(chit, children)
 		{
@@ -1376,14 +1376,14 @@ void update_info_after_cut(DAG *g, const IdList &old_mpnodes)
 void clear_ancestor_counts(DAG *g, int id)
 {
 	PrivDataUnion data = g->getPrivData(id);
-	number_t num = getNumFromPrivData(data);
+	number_t num = get_num_from_priv_data(data);
 	if (num == 0)
 	{
 		return;
 	}
 
 	num = 0;
-	setNumToPrivData(data, num);
+	set_num_to_priv_data(data, num);
 	g->setPrivData(id, data);
 
 	IdList parents;
@@ -1957,6 +1957,13 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 		//get_descendants_subdag(g, id, descendants);
 		//mD.removeSubdag(descendants);
 
+		PrivDataUnion privdata = g->getPrivData(id);
+		number_t subdag_count = get_num_from_priv_data(privdata);
+		if (subdag_count == 0)
+		{
+			subdag_count = 2;
+		}
+
 		IdList roots1, roots2;
 
 		DAG &mA = best_sub_problems.first;
@@ -2013,7 +2020,18 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 			exit(2);
 		}
 
-		total = num1 + num2;
+		if (g->isRoot(id))
+		{
+			total = num2 * (subdag_count - 1) + num1;
+		}
+		else if (g->isLeaf(id))
+		{
+			total = num1 * (subdag_count - 1) + num2;
+		}
+		else
+		{
+			total = num1 + num2;
+		}
 	}
 
 	if (using_hash)
@@ -2171,7 +2189,7 @@ number_t count_consistent_subdag(DAG *g, int rootid, bool using_hash)
 		modified.addVertex(srid);
 		PrivDataUnion priv;
 		//priv.ddouble = num;
-		setNumToPrivData(priv, num);
+		set_num_to_priv_data(priv, num);
 		modified.setPrivData(srid, priv);
 
 		// we should check if there is a parent for this root of subdag
@@ -2347,7 +2365,7 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 
 		PrivDataUnion priv;
 		//priv.ddouble = num;
-		setNumToPrivData(priv, num);
+		set_num_to_priv_data(priv, num);
 
 		// we should check if there is a parent for this root of subdag
 		if (subroots.size() == 1 && !g->isRoot(srid))
