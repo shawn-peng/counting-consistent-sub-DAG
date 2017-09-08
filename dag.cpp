@@ -456,7 +456,7 @@ int DAG::getChildList(int id, IdList &list) const
 
 int DAG::getParentNum(int id) const
 {
-	Vertex *v = findVertex(id);
+	const Vertex *v = findVertex(id);
 	if (v == NULL)
 	{
 		printf("Error in %s(): id:%07d not found.\n", __FUNCTION__, id);
@@ -560,9 +560,38 @@ bool DAG::isLeaf(int id) const
 	return (getChildNum(id) == 0);
 }
 
+int DAG::getLeafNum() const
+{
+	IdList leaves;
+	getLeafList(leaves);
+	return leaves.size();
+}
+
+void DAG::getLeafList(IdList &list) const
+{
+	FOR_EACH_IN_CONTAINER(iter, vertices)
+	{
+		if (iter->getChildNum() == 0)
+		{
+			list.push_back(iter->getId());
+		}
+	}
+}
+
 bool DAG::isInternal(int id) const
 {
 	return (!isLeaf(id) && !isRoot(id));
+}
+
+int DAG::getDegree(int id) const
+{
+	Vertex *v = findVertex(id);
+	if (v == NULL)
+	{
+		printf("Error in %s(): id:%07d not found.\n", __FUNCTION__, id);
+		exit(-1);
+	}
+	return v->getChildNum() + v->getParentNum();
 }
 
 void DAG::setPrivData(const PrivDataUnion &data)

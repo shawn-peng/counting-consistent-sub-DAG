@@ -19,6 +19,7 @@
 #include <queue>
 #include <map>
 #include <unordered_map>
+#include <unordered_set>
 #include <sstream>
 #include <memory>
 #include <limits.h>
@@ -29,6 +30,8 @@
 static const bool debugging = false;
 
 static const bool verify_hash = false;
+
+static const bool debug_flow = true;
 
 using namespace std;
 using namespace NS_DAG;
@@ -59,6 +62,13 @@ struct PathNode
 {
 	int depth;
 	Vertex *v;
+};
+
+struct Volumes
+{
+	double down_vol;
+	double up_vol;
+	Volumes() : down_vol(0.0), up_vol(0.0) {}
 };
 
 
@@ -124,6 +134,21 @@ int print_privdata_num(const PrivDataUnion *data)
 	ss << num;
 	printf("%s", ss.str().c_str());
 	return ss.str().size();
+}
+
+int print_privdata_flow(const PrivDataUnion *data)
+{
+	void *p = data->dptr.get();
+	Volumes vols;
+	if (p)
+	{
+		vols = *(Volumes *)(p);
+	}
+	
+	//stringstream ss;
+	//ss << "down:" << vols.down_vol << ", up:" << vols.up_vol;
+	//printf("%s", ss.str().c_str());
+	return printf("down:%f, up:%f", vols.down_vol, vols.up_vol);
 }
 
 int print_privdata_ptr(const PrivDataUnion *data)
@@ -205,6 +230,63 @@ int setPtrToPrivData(PrivDataUnion &data, T *p)
 	data.dptr = shared_ptr<void>(p);
 	data.type = DT_POINTER;
 	return 0;
+}
+
+void set_down_vol(DAG *g, int id, double vol)
+{
+	PrivDataUnion &data = g->getPrivData(id);
+	shared_ptr<void> &p = data.dptr;
+	if (!p)
+	{
+		// alloc a Volumes structure
+		p = make_shared<Volumes>();
+		data.type = DT_POINTER;
+	}
+	Volumes &vols = *static_pointer_cast<Volumes>(data.dptr);
+	vols.down_vol = vol;
+	return;
+}
+
+void set_up_vol(DAG *g, int id, double vol)
+{
+	PrivDataUnion &data = g->getPrivData(id);
+	shared_ptr<void> &p = data.dptr;
+	if (!p)
+	{
+		// alloc a Volumes structure
+		p = make_shared<Volumes>();
+		data.type = DT_POINTER;
+	}
+	Volumes &vols = *static_pointer_cast<Volumes>(data.dptr);
+	vols.up_vol = vol;
+	return;
+}
+
+double get_down_vol(DAG *g, int id)
+{
+	PrivDataUnion &data = g->getPrivData(id);
+	shared_ptr<void> &p = data.dptr;
+	assert(p); // we ensure that every vol has been set before we read it
+	Volumes &vols = *static_pointer_cast<Volumes>(p);
+	return vols.down_vol;
+}
+
+double get_up_vol(DAG *g, int id)
+{
+	PrivDataUnion &data = g->getPrivData(id);
+	shared_ptr<void> &p = data.dptr;
+	assert(p); // we ensure that every vol has been set before we read it
+	Volumes &vols = *static_pointer_cast<Volumes>(p);
+	return vols.up_vol;
+}
+
+double get_sum_vol(DAG *g, int id)
+{
+	PrivDataUnion &data = g->getPrivData(id);
+	shared_ptr<void> &p = data.dptr;
+	assert(p); // we ensure that every vol has been set before we read it
+	Volumes &vols = *static_pointer_cast<Volumes>(p);
+	return vols.down_vol + vols.up_vol;
 }
 
 //static map<int, int> parent_num_map;
@@ -827,6 +909,90 @@ int add_node_to_pathnode_queue(list<PathNode> &pl, PathNode x)
 
 	return id;
 }*/
+
+int perform_graph_flow(DAG *g)
+{
+	IdList fringe;
+
+	unordered_set<int> visited;
+
+	// recursively query flow value
+
+	// down flow
+	g->getLeafList(fringe);
+	while(!fringe.empty())
+	{
+		int id = fringe.front();
+		fringe.pop_front();
+
+		double sum_in_vol = 1.0; // 1.0 for self
+
+		IdList parents;
+		g->getParentList(id, parents);
+
+		FOR_EACH_IN_CONTAINER(it, parents)
+		{
+			int pid = *it;
+			int n = g->getChildNum(pid);
+			sum_in_vol += get_down_vol(g, pid) / n;
+		}
+
+		set_down_vol(g, id, sum_in_vol);
+		
+		IdList children;
+		g->getChildList(id, children);
+
+		FOR_EACH_IN_CONTAINER(it, children)
+		{
+			int chid = *it;
+			if (visited.count(chid) == 0)
+			{
+				fringe.push_back(chid);
+				visited.insert(chid);
+			}
+		}
+	}
+
+	assert(fringe.empty());
+	visited.clear();
+
+	// up flow
+	g->getRootList(fringe);
+	while(!fringe.empty())
+	{
+		int id = fringe.front();
+		fringe.pop_front();
+
+		double sum_in_vol = 1.0; // 1.0 for self
+
+		IdList children;
+		g->getChildList(id, children);
+
+		FOR_EACH_IN_CONTAINER(it, children)
+		{
+			int chid = *it;
+			int n = g->getParentNum(chid);
+			sum_in_vol += get_up_vol(g, chid) / n;
+		}
+
+		set_up_vol(g, id, sum_in_vol);
+		
+		IdList parents;
+		g->getParentList(id, parents);
+
+		FOR_EACH_IN_CONTAINER(it, parents)
+		{
+			int pid = *it;
+			if (visited.count(pid) == 0)
+			{
+				fringe.push_back(pid);
+				visited.insert(pid);
+			}
+		}
+	}
+
+	return 0;
+}
 
 int find_root_consistent_to_vertices(DAG *g, IdList nodes)
 {
@@ -1692,6 +1858,7 @@ void get_subproblems_splitted_by_vertex(DAG *g, int id, std::pair<DAG, DAG> &sub
 {
 	DAG &m1 = subproblems.first;
 	DAG &m2 = subproblems.second;
+
 	m1 = *g;
 	m2 = *g;
 
@@ -1704,10 +1871,12 @@ void get_subproblems_splitted_by_vertex(DAG *g, int id, std::pair<DAG, DAG> &sub
 	return;
 }
 
-pair<int, int> analyze_subproblem_scales_MPV(DAG *g, int id)
+pair<int, int> analyze_subproblem_scales_MPVnum(DAG *g, int id, std::pair<DAG, DAG> &subproblems)
 {
-	DAG m1, m2;
-	get_subproblems_splitted_by_vertex(g, id, m1, m2);
+	DAG &m1 = subproblems.first;
+	DAG &m2 = subproblems.second;
+
+	get_subproblems_splitted_by_vertex(g, id, subproblems);
 
 	//DAG m1(*g), m2(*g);
 	//DAG ancestors, descendants;
@@ -1727,7 +1896,7 @@ pair<int, int> analyze_subproblem_scales_MPV(DAG *g, int id)
 	return make_pair(s1, s2);
 }
 
-pair<int, int> analyze_subproblem_scales_Bound(DAG *g, int id)
+pair<int, int> analyze_subproblem_scales_Bound(DAG *g, int id, pair<DAG, DAG> &subprobs)
 {
 	DAG m1, m2;
 	get_subproblems_splitted_by_vertex(g, id, m1, m2);
@@ -1757,15 +1926,10 @@ pair<int, int> analyze_subproblem_scales_Bound(DAG *g, int id)
 	return make_pair(s1, s2);
 }
 
-pair<int, int> analyze_subproblem_scales_Bound_double_direction(DAG *g, int id, pair<DAG, DAG> &subprobs)
+pair<int, int> analyze_subproblem_scales_Bound_bidirectional(DAG *g, int id, pair<DAG, DAG> &subprobs)
 {
-	DAG m1(*g), m2(*g);
-
-	DAG ancestors, descendants;
-	get_ancestors_subdag(&m1, id, ancestors);
-	m1.removeSubdag(ancestors);
-	get_descendants_subdag(&m2, id, descendants);
-	m2.removeSubdag(descendants);
+	DAG &m1(subprobs.first), &m2(subprobs.second);
+	get_subproblems_splitted_by_vertex(g, id, subprobs);
 
 	int s1, s2;
 	int e1, n1, r1;
@@ -1782,8 +1946,8 @@ pair<int, int> analyze_subproblem_scales_Bound_double_direction(DAG *g, int id, 
 	s1 = e1 + n1 + r1;
 	s2 = e2 + n2 + r2;
 
+	// get the scales for the reversed problems
 	int rs1, rs2;
-
 	DAG rm1(m1), rm2(m2);
 	rm1.reverse();
 	rm2.reverse();
@@ -1794,25 +1958,19 @@ pair<int, int> analyze_subproblem_scales_Bound_double_direction(DAG *g, int id, 
 	rs1 = e1 + n1 + r1;
 	rs2 = e2 + n2 + r2;
 
-	if (s1 < rs1)
-	{
-		subprobs.first = m1;
-	}
-	else
+	// check if reversed will be better
+	if (s1 > rs1)
 	{
 		subprobs.first = rm1;
 	}
-	if (s2 < rs2)
-	{
-		subprobs.second = m2;
-	}
-	else
+	if (s2 > rs2)
 	{
 		subprobs.second = rm2;
 	}
 
 	return make_pair(min(s1,rs1), min(s2,rs2));
 }
+
 
 bool comp_scale_pairs_sum(std::pair<int, int> s1, std::pair<int, int> s2)
 {
@@ -1834,7 +1992,7 @@ int pivoting_by_Bound(DAG *g, std::pair<DAG, DAG> &best_sub_problems)
 		int id = *iter;
 		pair<DAG, DAG> temp_subs_problems;
 		pair<int, int> scales =
-			analyze_subproblem_scales_Bound_double_direction(
+			analyze_subproblem_scales_Bound_bidirectional(
 					g, id, temp_subs_problems);
 		//if (scales.first < scales.second)
 		//{
@@ -1852,6 +2010,40 @@ int pivoting_by_Bound(DAG *g, std::pair<DAG, DAG> &best_sub_problems)
 	return best_node;
 }
 
+
+int pivot_node_MPVnum(DAG *g, pair<DAG, DAG> &subprobs)
+{
+	int best_node = 0;
+	pair<DAG, DAG> best_sub_problems;
+
+	IdList nodes;
+	g->getVertexList(nodes);
+
+	pair<int, int> min_scales = make_pair(INT_MAX, INT_MAX);
+
+	FOR_EACH_IN_CONTAINER(iter, nodes)
+	{
+		int vid = *iter;
+		pair<DAG, DAG> temp_subs_problems;
+		pair<int, int> scales =
+			analyze_subproblem_scales_MPVnum(g, vid, temp_subs_problems);
+		if (scales.first < scales.second)
+		{
+			swap(scales.first, scales.second);
+		}
+
+		if (comp_scale_pairs_sum(scales, min_scales))
+		{
+			min_scales = scales;
+			best_node = vid;
+			best_sub_problems = temp_subs_problems;
+		}
+	}
+
+	subprobs = best_sub_problems;
+	return best_node;
+}
+
 int pivoting_by_vertex_degree(DAG *g, std::pair<DAG, DAG> &best_sub_problems)
 {
 	int best_node = 0;
@@ -1863,7 +2055,7 @@ int pivoting_by_vertex_degree(DAG *g, std::pair<DAG, DAG> &best_sub_problems)
 	FOR_EACH_IN_CONTAINER(iter, nodes)
 	{
 		int id = *iter;
-		int d = g->getParentNum(id) + g->getChildNum(id);
+		int d = g->getDegree(vid);
 		if (d > max_degree)
 		{
 			max_degree = d;
@@ -1873,6 +2065,106 @@ int pivoting_by_vertex_degree(DAG *g, std::pair<DAG, DAG> &best_sub_problems)
 
 	get_subproblems_splitted_by_vertex(g, best_node, best_sub_problems);
 
+	return best_node;
+}
+
+int pivot_node_Bound(DAG *g, pair<DAG, DAG> &subprobs)
+{
+	int best_node = 0;
+	pair<DAG, DAG> best_sub_problems;
+
+	IdList nodes;
+	g->getVertexList(nodes);
+
+	pair<int, int> min_scales = make_pair(INT_MAX, INT_MAX);
+
+	FOR_EACH_IN_CONTAINER(iter, nodes)
+	{
+		int vid = *iter;
+		pair<DAG, DAG> temp_subs_problems;
+		pair<int, int> scales =
+			analyze_subproblem_scales_Bound(g, vid, temp_subs_problems);
+		if (scales.first < scales.second)
+		{
+			swap(scales.first, scales.second);
+		}
+
+		if (comp_scale_pairs_sum(scales, min_scales))
+		{
+			min_scales = scales;
+			best_node = vid;
+			best_sub_problems = temp_subs_problems;
+		}
+	}
+
+	return best_node;
+}
+
+int pivot_node_Bound_bidirectional(DAG *g, pair<DAG, DAG> &subprobs)
+{
+	int best_node = 0;
+	pair<DAG, DAG> best_sub_problems;
+
+	IdList nodes;
+	g->getVertexList(nodes);
+
+	pair<int, int> min_scales = make_pair(INT_MAX, INT_MAX);
+
+	FOR_EACH_IN_CONTAINER(iter, nodes)
+	{
+		int vid = *iter;
+		pair<DAG, DAG> temp_subs_problems;
+		pair<int, int> scales =
+			analyze_subproblem_scales_Bound_bidirectional(
+					g, vid, temp_subs_problems);
+		// put the larger scale at the front
+		if (scales.first < scales.second)
+		{
+			swap(scales.first, scales.second);
+		}
+
+		if (comp_scale_pairs_sum(scales, min_scales))
+		{
+			min_scales = scales;
+			best_node = vid;
+			best_sub_problems = temp_subs_problems;
+		}
+	}
+
+	return best_node;
+}
+
+int pivot_node_Flow_bidirectional(DAG *g, pair<DAG, DAG> &subprobs)
+{
+	int best_node = 0;
+	int max_flow = 0;
+
+	DAG gflow(*g);
+	gflow.clearVertexPrivData();
+
+	perform_graph_flow(&gflow);
+	if (debug_flow)
+	{
+		printf("The flow in the graph:\n");
+		gflow.print(print_privdata_flow);
+	}
+
+	IdList nodes;
+	g->getVertexList(nodes);
+
+	FOR_EACH_IN_CONTAINER(iter, nodes)
+	{
+		int id = *iter;
+
+		double flow = get_sum_vol(&gflow, id);
+		if (flow > max_flow)
+		{
+			best_node = id;
+			max_flow = flow;
+		}
+	}
+
+	get_subproblems_splitted_by_vertex(g, best_node, subprobs);
 	return best_node;
 }
 
@@ -1924,9 +2216,6 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 
 	IdList mpnodes;
 	g->getMultiParentVertices(mpnodes);
-
-	IdList nodes;
-	g->getVertexList(nodes);
 
 	if (mpnodes.size() == 0)
 	{

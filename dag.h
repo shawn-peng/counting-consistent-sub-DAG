@@ -176,15 +176,18 @@ public:
 	int getVertexNum() const;
 	int getEdgeNum() const;
 	int getRootNum() const;
+	int getLeafNum() const;
 
 	int getChildNum(int id) const;
 	int getParentNum(int id) const;
+	int getDegree(int id) const;
 
 	bool isRoot(int id) const;
 	bool isLeaf(int id) const;
 	bool isInternal(int id) const;
 
 	void getRootList(IdList &list) const;
+	void getLeafList(IdList &list) const;
 	int getParentList(int id, IdList &list) const;
 	int getChildList(int id, IdList &list) const;
 
