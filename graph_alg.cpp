@@ -2047,31 +2047,6 @@ int pivot_by_Bound(DAG *g, std::pair<DAG, DAG> &best_sub_problems)
 	return best_node;
 }
 
-
-int pivot_by_vertex_degree(DAG *g, std::pair<DAG, DAG> &best_sub_problems)
-{
-	int best_node = 0;
-
-	IdList nodes;
-	g->getVertexList(nodes);
-
-	int max_degree = 0;
-	FOR_EACH_IN_CONTAINER(iter, nodes)
-	{
-		int id = *iter;
-		int d = g->getDegree(vid);
-		if (d > max_degree)
-		{
-			max_degree = d;
-			best_node = id;
-		}
-	}
-
-	get_subproblems_splitted_by_vertex(g, best_node, best_sub_problems);
-
-	return best_node;
-}
-
 int pivot_node_Bound(DAG *g, pair<DAG, DAG> &subprobs)
 {
 	int best_node = 0;
@@ -2134,6 +2109,30 @@ int pivot_node_Bound_bidirectional(DAG *g, pair<DAG, DAG> &subprobs)
 			best_sub_problems = temp_subs_problems;
 		}
 	}
+
+	return best_node;
+}
+
+int pivot_by_vertex_degree(DAG *g, std::pair<DAG, DAG> &best_sub_problems)
+{
+	int best_node = 0;
+
+	IdList nodes;
+	g->getVertexList(nodes);
+
+	int max_degree = 0;
+	FOR_EACH_IN_CONTAINER(iter, nodes)
+	{
+		int id = *iter;
+		int d = g->getDegree(vid);
+		if (d > max_degree)
+		{
+			max_degree = d;
+			best_node = id;
+		}
+	}
+
+	get_subproblems_splitted_by_vertex(g, best_node, best_sub_problems);
 
 	return best_node;
 }
