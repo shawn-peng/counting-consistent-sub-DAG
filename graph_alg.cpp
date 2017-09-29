@@ -1856,7 +1856,7 @@ bool comp_scale_pairs_sum(std::pair<int, int> s1, std::pair<int, int> s2)
 	return ((long long)s1.first + s1.second) < ((long long)s2.first + s2.second);
 }
 
-int pivoting_by_Bound(DAG *g, std::pair<DAG, DAG> &best_sub_problems)
+int pivot_by_Bound(DAG *g, std::pair<DAG, DAG> &best_sub_problems)
 {
 	int best_node = 0;
 
@@ -1889,7 +1889,7 @@ int pivoting_by_Bound(DAG *g, std::pair<DAG, DAG> &best_sub_problems)
 	return best_node;
 }
 
-int pivoting_by_vertex_degree(DAG *g, std::pair<DAG, DAG> &best_sub_problems)
+int pivot_by_vertex_degree(DAG *g, std::pair<DAG, DAG> &best_sub_problems)
 {
 	int best_node = 0;
 
@@ -1987,8 +1987,8 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 
 		pair<DAG, DAG> best_sub_problems;
 
-		int id = pivoting_by_vertex_degree(g, best_sub_problems);
-		//int id = pivoting_by_Bound(g, best_sub_problems);
+		int id = pivot_by_vertex_degree(g, best_sub_problems);
+		//int id = pivot_by_Bound(g, best_sub_problems);
 
 		//printf("partitioning with MP node %d\n", id);
 		//DAG ancestors, descendants;
