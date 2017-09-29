@@ -2014,7 +2014,7 @@ bool comp_scale_pairs_sum(std::pair<int, int> s1, std::pair<int, int> s2)
 	return ((long long)s1.first + s1.second) < ((long long)s2.first + s2.second);
 }
 
-int pivoting_by_Bound(DAG *g, std::pair<DAG, DAG> &best_sub_problems)
+int pivot_by_Bound(DAG *g, std::pair<DAG, DAG> &best_sub_problems)
 {
 	int best_node = 0;
 
@@ -2048,40 +2048,7 @@ int pivoting_by_Bound(DAG *g, std::pair<DAG, DAG> &best_sub_problems)
 }
 
 
-int pivot_node_MPVnum(DAG *g, pair<DAG, DAG> &subprobs)
-{
-	int best_node = 0;
-	pair<DAG, DAG> best_sub_problems;
-
-	IdList nodes;
-	g->getVertexList(nodes);
-
-	pair<int, int> min_scales = make_pair(INT_MAX, INT_MAX);
-
-	FOR_EACH_IN_CONTAINER(iter, nodes)
-	{
-		int vid = *iter;
-		pair<DAG, DAG> temp_subs_problems;
-		pair<int, int> scales =
-			analyze_subproblem_scales_MPVnum(g, vid, temp_subs_problems);
-		if (scales.first < scales.second)
-		{
-			swap(scales.first, scales.second);
-		}
-
-		if (comp_scale_pairs_sum(scales, min_scales))
-		{
-			min_scales = scales;
-			best_node = vid;
-			best_sub_problems = temp_subs_problems;
-		}
-	}
-
-	subprobs = best_sub_problems;
-	return best_node;
-}
-
-int pivoting_by_vertex_degree(DAG *g, std::pair<DAG, DAG> &best_sub_problems)
+int pivot_by_vertex_degree(DAG *g, std::pair<DAG, DAG> &best_sub_problems)
 {
 	int best_node = 0;
 
@@ -2276,8 +2243,8 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 
 		pair<DAG, DAG> best_sub_problems;
 
-		int id = pivoting_by_vertex_degree(g, best_sub_problems);
-		//int id = pivoting_by_Bound(g, best_sub_problems);
+		int id = pivot_by_vertex_degree(g, best_sub_problems);
+		//int id = pivot_by_Bound(g, best_sub_problems);
 
 		//printf("partitioning with MP node %d\n", id);
 		//DAG ancestors, descendants;
