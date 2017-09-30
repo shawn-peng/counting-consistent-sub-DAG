@@ -32,7 +32,7 @@ static const bool debugging = false;
 
 static const bool verify_hash = false;
 
-static const bool debug_flow = true;
+static const bool debug_flow = false;
 
 using namespace std;
 using namespace NS_DAG;
