@@ -26,6 +26,11 @@
 *.exe
 *.out
 *.app
+analyze_graph
+batch_graph_gen
+core
+graph_alg
+graph_gen
 
 *.swp
 *.swo
