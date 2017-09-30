@@ -1030,7 +1030,9 @@ int perform_graph_flow(DAG *g)
 		FOR_EACH_IN_CONTAINER(it, parents)
 		{
 			int pid = *it;
-			sum_in_flow += get_each_down_flow(g, pid);
+			double x = get_each_down_flow(g, pid);
+			assert(x != 0);
+			sum_in_flow += x;
 		}
 		
 		int n = g->getChildNum(id);
@@ -1053,7 +1055,9 @@ int perform_graph_flow(DAG *g)
 		FOR_EACH_IN_CONTAINER(it, children)
 		{
 			int chid = *it;
-			sum_in_flow += get_each_up_flow(g, chid);
+			double x = get_each_up_flow(g, chid);
+			assert(x != 0);
+			sum_in_flow += x;
 		}
 
 		int n = g->getParentNum(id);
@@ -2172,6 +2176,24 @@ int pivot_by_flow_bidirectional(DAG *g, pair<DAG, DAG> &subprobs)
 	{
 		printf("The flow in the graph:\n");
 		gflow.print(print_privdata_flow);
+
+		// the sum of all flow in roots or leaves should be equal to the number of nodes
+		double sum_up, sum_down;
+		IdList roots, leaves;
+		gflow.getRootList(roots);
+		gflow.getLeafList(leaves);
+
+		int n = gflow.getVertexNum();
+		FOR_EACH_IN_CONTAINER(iter, roots)
+		{
+			sum_up += get_up_flow(&gflow, *iter);
+		}
+		FOR_EACH_IN_CONTAINER(iter, leaves)
+		{
+			sum_down += get_down_flow(&gflow, *iter);
+		}
+		assert(sum_up == n);
+		assert(sum_down == n);
 	}
 
 	IdList nodes;
