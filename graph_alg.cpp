@@ -85,12 +85,14 @@ struct PathNode
 	}
 };
 
+typedef mpq_class Rational;
+typedef Rational Flow_t;
 struct Flows
 {
-	double down_flow;
-	double up_flow;
-	double each_down_flow;
-	double each_up_flow;
+	Flow_t down_flow;
+	Flow_t up_flow;
+	Flow_t each_down_flow;
+	Flow_t each_up_flow;
 	Flows() : down_flow(0.0), up_flow(0.0),
 		each_down_flow(0.0), each_up_flow(0.0){}
 };
@@ -169,10 +171,10 @@ int print_privdata_flow(const PrivDataUnion *data)
 		flows = *(Flows *)(p);
 	}
 	
-	//stringstream ss;
-	//ss << "down:" << flows.down_flow << ", up:" << flows.up_flow;
-	//printf("%s", ss.str().c_str());
-	return printf("down:%f, up:%f", flows.down_flow, flows.up_flow);
+	stringstream ss;
+	ss << "down:" << flows.down_flow << ", up:" << flows.up_flow;
+	return printf("%s", ss.str().c_str());
+	//return printf("down:%f, up:%f", flows.down_flow, flows.up_flow);
 }
 
 int print_privdata_ptr(const PrivDataUnion *data)
@@ -256,7 +258,7 @@ int setPtrToPrivData(PrivDataUnion &data, T *p)
 	return 0;
 }
 
-void set_down_flow(DAG *g, int id, double flow)
+void set_down_flow(DAG *g, int id, Flow_t flow)
 {
 	PrivDataUnion &data = g->getPrivData(id);
 	shared_ptr<void> &p = data.dptr;
@@ -271,7 +273,7 @@ void set_down_flow(DAG *g, int id, double flow)
 	return;
 }
 
-void set_up_flow(DAG *g, int id, double flow)
+void set_up_flow(DAG *g, int id, Flow_t flow)
 {
 	PrivDataUnion &data = g->getPrivData(id);
 	shared_ptr<void> &p = data.dptr;
@@ -286,7 +288,7 @@ void set_up_flow(DAG *g, int id, double flow)
 	return;
 }
 
-double get_down_flow(DAG *g, int id)
+Flow_t get_down_flow(DAG *g, int id)
 {
 	PrivDataUnion &data = g->getPrivData(id);
 	shared_ptr<void> &p = data.dptr;
@@ -295,7 +297,7 @@ double get_down_flow(DAG *g, int id)
 	return flows.down_flow;
 }
 
-double get_up_flow(DAG *g, int id)
+Flow_t get_up_flow(DAG *g, int id)
 {
 	PrivDataUnion &data = g->getPrivData(id);
 	shared_ptr<void> &p = data.dptr;
@@ -304,7 +306,7 @@ double get_up_flow(DAG *g, int id)
 	return flows.up_flow;
 }
 
-void set_each_down_flow(DAG *g, int id, double flow)
+void set_each_down_flow(DAG *g, int id, Flow_t flow)
 {
 	PrivDataUnion &data = g->getPrivData(id);
 	shared_ptr<void> &p = data.dptr;
@@ -319,7 +321,7 @@ void set_each_down_flow(DAG *g, int id, double flow)
 	return;
 }
 
-void set_each_up_flow(DAG *g, int id, double flow)
+void set_each_up_flow(DAG *g, int id, Flow_t flow)
 {
 	PrivDataUnion &data = g->getPrivData(id);
 	shared_ptr<void> &p = data.dptr;
@@ -334,7 +336,7 @@ void set_each_up_flow(DAG *g, int id, double flow)
 	return;
 }
 
-double get_each_down_flow(DAG *g, int id)
+Flow_t get_each_down_flow(DAG *g, int id)
 {
 	PrivDataUnion &data = g->getPrivData(id);
 	shared_ptr<void> &p = data.dptr;
@@ -343,7 +345,7 @@ double get_each_down_flow(DAG *g, int id)
 	return flows.each_down_flow;
 }
 
-double get_each_up_flow(DAG *g, int id)
+Flow_t get_each_up_flow(DAG *g, int id)
 {
 	PrivDataUnion &data = g->getPrivData(id);
 	shared_ptr<void> &p = data.dptr;
@@ -352,7 +354,7 @@ double get_each_up_flow(DAG *g, int id)
 	return flows.each_up_flow;
 }
 
-double get_sum_flow(DAG *g, int id)
+Flow_t get_sum_flow(DAG *g, int id)
 {
 	PrivDataUnion &data = g->getPrivData(id);
 	shared_ptr<void> &p = data.dptr;
@@ -1022,7 +1024,7 @@ int perform_graph_flow(DAG *g)
 	{
 		int id = *iter;
 
-		double sum_in_flow = 1.0;// 1.0 for self
+		Flow_t sum_in_flow = 1.0;// 1.0 for self
 
 		IdList parents;
 		g->getParentList(id, parents);
@@ -1030,16 +1032,20 @@ int perform_graph_flow(DAG *g)
 		FOR_EACH_IN_CONTAINER(it, parents)
 		{
 			int pid = *it;
-			double x = get_each_down_flow(g, pid);
+			Flow_t x = get_each_down_flow(g, pid);
 			assert(x != 0);
 			sum_in_flow += x;
 		}
-		
-		int n = g->getChildNum(id);
-		double each_out_flow = sum_in_flow / n;
 
 		set_down_flow(g, id, sum_in_flow);
-		set_each_down_flow(g, id, each_out_flow);
+		
+		int n = g->getChildNum(id);
+		Flow_t each_out_flow;
+		if (n != 0)
+		{
+			each_out_flow = sum_in_flow / n;
+			set_each_down_flow(g, id, each_out_flow);
+		}
 	}
 
 	// up flow
@@ -1047,7 +1053,7 @@ int perform_graph_flow(DAG *g)
 	{
 		int id = *riter;
 
-		double sum_in_flow = 1.0; // 1.0 for self
+		Flow_t sum_in_flow = 1.0; // 1.0 for self
 
 		IdList children;
 		g->getChildList(id, children);
@@ -1055,16 +1061,20 @@ int perform_graph_flow(DAG *g)
 		FOR_EACH_IN_CONTAINER(it, children)
 		{
 			int chid = *it;
-			double x = get_each_up_flow(g, chid);
+			Flow_t x = get_each_up_flow(g, chid);
 			assert(x != 0);
 			sum_in_flow += x;
 		}
 
-		int n = g->getParentNum(id);
-		double each_out_flow = sum_in_flow / n;
-
 		set_up_flow(g, id, sum_in_flow);
-		set_each_up_flow(g, id, each_out_flow);
+		
+		int n = g->getParentNum(id);
+		Flow_t each_out_flow;
+		if (n != 0)
+		{
+			each_out_flow = sum_in_flow / n;
+			set_each_up_flow(g, id, each_out_flow);
+		}
 	}
 
 	return 0;
@@ -2166,7 +2176,6 @@ int pivot_by_vertex_degree(DAG *g, std::pair<DAG, DAG> &best_sub_problems)
 int pivot_by_flow_bidirectional(DAG *g, pair<DAG, DAG> &subprobs)
 {
 	int best_node = 0;
-	int max_flow = 0;
 
 	DAG gflow(*g);
 	gflow.clearVertexPrivData();
@@ -2176,36 +2185,38 @@ int pivot_by_flow_bidirectional(DAG *g, pair<DAG, DAG> &subprobs)
 	{
 		printf("The flow in the graph:\n");
 		gflow.print(print_privdata_flow);
-
-		// the sum of all flow in roots or leaves should be equal to the number of nodes
-		double sum_up, sum_down;
-		IdList roots, leaves;
-		gflow.getRootList(roots);
-		gflow.getLeafList(leaves);
-
-		int n = gflow.getVertexNum();
-		FOR_EACH_IN_CONTAINER(iter, roots)
-		{
-			sum_up += get_up_flow(&gflow, *iter);
-		}
-		FOR_EACH_IN_CONTAINER(iter, leaves)
-		{
-			sum_down += get_down_flow(&gflow, *iter);
-		}
-		assert(sum_up == n);
-		assert(sum_down == n);
 	}
+
+	// check flow result
+	// the sum of all flow in roots or leaves should be equal to the number of nodes
+	Flow_t sum_up, sum_down;
+	IdList roots, leaves;
+	gflow.getRootList(roots);
+	gflow.getLeafList(leaves);
+
+	int n = gflow.getVertexNum();
+	FOR_EACH_IN_CONTAINER(iter, roots)
+	{
+		sum_up += get_up_flow(&gflow, *iter);
+	}
+	FOR_EACH_IN_CONTAINER(iter, leaves)
+	{
+		sum_down += get_down_flow(&gflow, *iter);
+	}
+	assert(sum_up == n);
+	assert(sum_down == n);
 
 	IdList nodes;
 	g->getVertexList(nodes);
 
+	Flow_t max_flow = 0;
 	FOR_EACH_IN_CONTAINER(iter, nodes)
 	{
 		int id = *iter;
 
-		double upflow = get_up_flow(&gflow, id);
-		double downflow = get_down_flow(&gflow, id);
-		double flow = max(upflow, downflow);
+		Flow_t upflow = get_up_flow(&gflow, id);
+		Flow_t downflow = get_down_flow(&gflow, id);
+		Flow_t flow = max(upflow, downflow);
 		if (flow > max_flow)
 		{
 			best_node = id;
