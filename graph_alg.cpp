@@ -64,6 +64,9 @@ struct PathNode
 	int id;
 	int depth;
 	//Vertex *v;
+
+	PathNode() : id(-1), depth(-1) {}
+	PathNode(int id, int depth) : id(id), depth(depth) {}
 	
 	bool operator <(const PathNode &rhs) const
 	{
@@ -82,11 +85,14 @@ struct PathNode
 	}
 };
 
-struct Volumes
+struct Flows
 {
-	double down_vol;
-	double up_vol;
-	Volumes() : down_vol(0.0), up_vol(0.0) {}
+	double down_flow;
+	double up_flow;
+	double each_down_flow;
+	double each_up_flow;
+	Flows() : down_flow(0.0), up_flow(0.0),
+		each_down_flow(0.0), each_up_flow(0.0){}
 };
 
 
@@ -157,16 +163,16 @@ int print_privdata_num(const PrivDataUnion *data)
 int print_privdata_flow(const PrivDataUnion *data)
 {
 	void *p = data->dptr.get();
-	Volumes vols;
+	Flows flows;
 	if (p)
 	{
-		vols = *(Volumes *)(p);
+		flows = *(Flows *)(p);
 	}
 	
 	//stringstream ss;
-	//ss << "down:" << vols.down_vol << ", up:" << vols.up_vol;
+	//ss << "down:" << flows.down_flow << ", up:" << flows.up_flow;
 	//printf("%s", ss.str().c_str());
-	return printf("down:%f, up:%f", vols.down_vol, vols.up_vol);
+	return printf("down:%f, up:%f", flows.down_flow, flows.up_flow);
 }
 
 int print_privdata_ptr(const PrivDataUnion *data)
@@ -250,61 +256,109 @@ int setPtrToPrivData(PrivDataUnion &data, T *p)
 	return 0;
 }
 
-void set_down_vol(DAG *g, int id, double vol)
+void set_down_flow(DAG *g, int id, double flow)
 {
 	PrivDataUnion &data = g->getPrivData(id);
 	shared_ptr<void> &p = data.dptr;
 	if (!p)
 	{
-		// alloc a Volumes structure
-		p = make_shared<Volumes>();
+		// alloc a Flows structure
+		p = make_shared<Flows>();
 		data.type = DT_POINTER;
 	}
-	Volumes &vols = *static_pointer_cast<Volumes>(data.dptr);
-	vols.down_vol = vol;
+	Flows &flows = *static_pointer_cast<Flows>(data.dptr);
+	flows.down_flow = flow;
 	return;
 }
 
-void set_up_vol(DAG *g, int id, double vol)
+void set_up_flow(DAG *g, int id, double flow)
 {
 	PrivDataUnion &data = g->getPrivData(id);
 	shared_ptr<void> &p = data.dptr;
 	if (!p)
 	{
-		// alloc a Volumes structure
-		p = make_shared<Volumes>();
+		// alloc a Flows structure
+		p = make_shared<Flows>();
 		data.type = DT_POINTER;
 	}
-	Volumes &vols = *static_pointer_cast<Volumes>(data.dptr);
-	vols.up_vol = vol;
+	Flows &flows = *static_pointer_cast<Flows>(data.dptr);
+	flows.up_flow = flow;
 	return;
 }
 
-double get_down_vol(DAG *g, int id)
+double get_down_flow(DAG *g, int id)
 {
 	PrivDataUnion &data = g->getPrivData(id);
 	shared_ptr<void> &p = data.dptr;
-	assert(p); // we ensure that every vol has been set before we read it
-	Volumes &vols = *static_pointer_cast<Volumes>(p);
-	return vols.down_vol;
+	assert(p); // we ensure that every flow has been set before we read it
+	Flows &flows = *static_pointer_cast<Flows>(p);
+	return flows.down_flow;
 }
 
-double get_up_vol(DAG *g, int id)
+double get_up_flow(DAG *g, int id)
 {
 	PrivDataUnion &data = g->getPrivData(id);
 	shared_ptr<void> &p = data.dptr;
-	assert(p); // we ensure that every vol has been set before we read it
-	Volumes &vols = *static_pointer_cast<Volumes>(p);
-	return vols.up_vol;
+	assert(p); // we ensure that every flow has been set before we read it
+	Flows &flows = *static_pointer_cast<Flows>(p);
+	return flows.up_flow;
 }
 
-double get_sum_vol(DAG *g, int id)
+void set_each_down_flow(DAG *g, int id, double flow)
 {
 	PrivDataUnion &data = g->getPrivData(id);
 	shared_ptr<void> &p = data.dptr;
-	assert(p); // we ensure that every vol has been set before we read it
-	Volumes &vols = *static_pointer_cast<Volumes>(p);
-	return vols.down_vol + vols.up_vol;
+	if (!p)
+	{
+		// alloc a Flows structure
+		p = make_shared<Flows>();
+		data.type = DT_POINTER;
+	}
+	Flows &flows = *static_pointer_cast<Flows>(data.dptr);
+	flows.each_down_flow = flow;
+	return;
+}
+
+void set_each_up_flow(DAG *g, int id, double flow)
+{
+	PrivDataUnion &data = g->getPrivData(id);
+	shared_ptr<void> &p = data.dptr;
+	if (!p)
+	{
+		// alloc a Flows structure
+		p = make_shared<Flows>();
+		data.type = DT_POINTER;
+	}
+	Flows &flows = *static_pointer_cast<Flows>(data.dptr);
+	flows.each_up_flow = flow;
+	return;
+}
+
+double get_each_down_flow(DAG *g, int id)
+{
+	PrivDataUnion &data = g->getPrivData(id);
+	shared_ptr<void> &p = data.dptr;
+	assert(p); // we ensure that every flow has been set before we read it
+	Flows &flows = *static_pointer_cast<Flows>(p);
+	return flows.each_down_flow;
+}
+
+double get_each_up_flow(DAG *g, int id)
+{
+	PrivDataUnion &data = g->getPrivData(id);
+	shared_ptr<void> &p = data.dptr;
+	assert(p); // we ensure that every flow has been set before we read it
+	Flows &flows = *static_pointer_cast<Flows>(p);
+	return flows.each_up_flow;
+}
+
+double get_sum_flow(DAG *g, int id)
+{
+	PrivDataUnion &data = g->getPrivData(id);
+	shared_ptr<void> &p = data.dptr;
+	assert(p); // we ensure that every flow has been set before we read it
+	Flows &flows = *static_pointer_cast<Flows>(p);
+	return flows.down_flow + flows.up_flow;
 }
 
 //static map<int, int> parent_num_map;
@@ -928,60 +982,70 @@ int gen_mpnode_pathinfo(DAG *g, IdList mpnodes)
 	return id;
 }*/
 
-int perform_graph_flow(DAG *g)
+int get_topological_order(DAG *g, IdList &list)
 {
-	IdList fringe;
-
-	unordered_set<int> visited;
-
-	// recursively query flow value
-
-	// down flow
-	g->getLeafList(fringe);
-	while(!fringe.empty())
+	DAG modified(*g);
+	
+	// The following is equivalent to Kahn's algorithm.
+	// Add roots to order list, then remove roots.
+	// Keep doing this untill empty.
+	// We do this because we cannot iterate edges directly
+	// and remove them in a constant time.
+	while(modified.getRootNum() > 0)
 	{
-		int id = fringe.front();
-		fringe.pop_front();
+		IdList fringe;
+		modified.getRootList(fringe);
 
-		double sum_in_vol = 1.0; // 1.0 for self
-
-		IdList parents;
-		g->getParentList(id, parents);
-
-		FOR_EACH_IN_CONTAINER(it, parents)
+		FOR_EACH_IN_CONTAINER(iter, fringe)
 		{
-			int pid = *it;
-			int n = g->getChildNum(pid);
-			sum_in_vol += get_down_vol(g, pid) / n;
+			modified.removeVertex(*iter);
 		}
 
-		set_down_vol(g, id, sum_in_vol);
-		
-		IdList children;
-		g->getChildList(id, children);
-
-		FOR_EACH_IN_CONTAINER(it, children)
-		{
-			int chid = *it;
-			if (visited.count(chid) == 0)
-			{
-				fringe.push_back(chid);
-				visited.insert(chid);
-			}
-		}
+		list.splice(list.end(), fringe);
 	}
 
-	assert(fringe.empty());
-	visited.clear();
+	assert(modified.getVertexNum() == 0);
+	return 0;
+}
+
+int perform_graph_flow(DAG *g)
+{
+	//IdList fringe;
+	IdList nodes;
+
+	// get topological order
+	IdList topo;
+	get_topological_order(g, topo);
+
+	// down flow
+	FOR_EACH_IN_CONTAINER(iter, topo)
+	{
+		int id = *iter;
+
+		double sum_in_flow = 1.0;// 1.0 for self
+
+		IdList parents;
+		g->getParentList(id, parents);
+
+		FOR_EACH_IN_CONTAINER(it, parents)
+		{
+			int pid = *it;
+			sum_in_flow += get_each_down_flow(g, pid);
+		}
+		
+		int n = g->getChildNum(id);
+		double each_out_flow = sum_in_flow / n;
+
+		set_down_flow(g, id, sum_in_flow);
+		set_each_down_flow(g, id, each_out_flow);
+	}
 
 	// up flow
-	g->getRootList(fringe);
-	while(!fringe.empty())
+	FOR_EACH_IN_CONTAINER_REVERSE(riter, topo)
 	{
-		int id = fringe.front();
-		fringe.pop_front();
+		int id = *riter;
 
-		double sum_in_vol = 1.0; // 1.0 for self
+		double sum_in_flow = 1.0; // 1.0 for self
 
 		IdList children;
 		g->getChildList(id, children);
@@ -989,24 +1053,14 @@ int perform_graph_flow(DAG *g)
 		FOR_EACH_IN_CONTAINER(it, children)
 		{
 			int chid = *it;
-			int n = g->getParentNum(chid);
-			sum_in_vol += get_up_vol(g, chid) / n;
+			sum_in_flow += get_each_up_flow(g, chid);
 		}
 
-		set_up_vol(g, id, sum_in_vol);
-		
-		IdList parents;
-		g->getParentList(id, parents);
+		int n = g->getParentNum(id);
+		double each_out_flow = sum_in_flow / n;
 
-		FOR_EACH_IN_CONTAINER(it, parents)
-		{
-			int pid = *it;
-			if (visited.count(pid) == 0)
-			{
-				fringe.push_back(pid);
-				visited.insert(pid);
-			}
-		}
+		set_up_flow(g, id, sum_in_flow);
+		set_each_up_flow(g, id, each_out_flow);
 	}
 
 	return 0;
@@ -2029,12 +2083,12 @@ int pivot_by_Bound(DAG *g, std::pair<DAG, DAG> &best_sub_problems)
 		int id = *iter;
 		pair<DAG, DAG> temp_subs_problems;
 		pair<int, int> scales =
-			analyze_subproblem_scales_Bound_bidirectional(
+			analyze_subproblem_scales_Bound(
 					g, id, temp_subs_problems);
-		//if (scales.first < scales.second)
-		//{
-		//	swap(scales.first, scales.second);
-		//}
+		if (scales.first < scales.second)
+		{
+			swap(scales.first, scales.second);
+		}
 
 		if (comp_scale_pairs_sum(scales, min_scales))
 		{
@@ -2047,39 +2101,7 @@ int pivot_by_Bound(DAG *g, std::pair<DAG, DAG> &best_sub_problems)
 	return best_node;
 }
 
-int pivot_node_Bound(DAG *g, pair<DAG, DAG> &subprobs)
-{
-	int best_node = 0;
-	pair<DAG, DAG> best_sub_problems;
-
-	IdList nodes;
-	g->getVertexList(nodes);
-
-	pair<int, int> min_scales = make_pair(INT_MAX, INT_MAX);
-
-	FOR_EACH_IN_CONTAINER(iter, nodes)
-	{
-		int vid = *iter;
-		pair<DAG, DAG> temp_subs_problems;
-		pair<int, int> scales =
-			analyze_subproblem_scales_Bound(g, vid, temp_subs_problems);
-		if (scales.first < scales.second)
-		{
-			swap(scales.first, scales.second);
-		}
-
-		if (comp_scale_pairs_sum(scales, min_scales))
-		{
-			min_scales = scales;
-			best_node = vid;
-			best_sub_problems = temp_subs_problems;
-		}
-	}
-
-	return best_node;
-}
-
-int pivot_node_Bound_bidirectional(DAG *g, pair<DAG, DAG> &subprobs)
+int pivot_by_Bound_bidirectional(DAG *g, pair<DAG, DAG> &subprobs)
 {
 	int best_node = 0;
 	pair<DAG, DAG> best_sub_problems;
@@ -2124,7 +2146,7 @@ int pivot_by_vertex_degree(DAG *g, std::pair<DAG, DAG> &best_sub_problems)
 	FOR_EACH_IN_CONTAINER(iter, nodes)
 	{
 		int id = *iter;
-		int d = g->getDegree(vid);
+		int d = g->getDegree(id);
 		if (d > max_degree)
 		{
 			max_degree = d;
@@ -2137,7 +2159,7 @@ int pivot_by_vertex_degree(DAG *g, std::pair<DAG, DAG> &best_sub_problems)
 	return best_node;
 }
 
-int pivot_node_Flow_bidirectional(DAG *g, pair<DAG, DAG> &subprobs)
+int pivot_by_flow_bidirectional(DAG *g, pair<DAG, DAG> &subprobs)
 {
 	int best_node = 0;
 	int max_flow = 0;
@@ -2159,7 +2181,9 @@ int pivot_node_Flow_bidirectional(DAG *g, pair<DAG, DAG> &subprobs)
 	{
 		int id = *iter;
 
-		double flow = get_sum_vol(&gflow, id);
+		double upflow = get_up_flow(g, id);
+		double downflow = get_down_flow(g, id);
+		double flow = max(upflow, downflow);
 		if (flow > max_flow)
 		{
 			best_node = id;
@@ -2242,7 +2266,8 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 
 		pair<DAG, DAG> best_sub_problems;
 
-		int id = pivot_by_vertex_degree(g, best_sub_problems);
+		int id = pivot_by_flow_bidirectional(g, best_sub_problems);
+		//int id = pivot_by_vertex_degree(g, best_sub_problems);
 		//int id = pivot_by_Bound(g, best_sub_problems);
 
 		//printf("partitioning with MP node %d\n", id);

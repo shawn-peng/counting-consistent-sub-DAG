@@ -12,15 +12,17 @@
 #include <string>
 #include <vector>
 #include <list>
+#include <set>
 #include <map>
 #include <memory>
 
-using namespace std;
+//using namespace std;
 
 namespace NS_DAG
 {
 
-typedef list<int> IdList;
+typedef std::list<int> IdList;
+typedef std::set<int> IdSet;
 
 enum DataTypeEnum
 {
@@ -58,7 +60,7 @@ struct PrivDataUnion
 	int &dint;
 	float &dfloat;
 	double &ddouble;
-	shared_ptr<void> dptr;
+	std::shared_ptr<void> dptr;
 
 	PrivDataUnion();
 	PrivDataUnion(const PrivDataUnion &);
@@ -105,15 +107,15 @@ public:
 	void clearSubkey();
 };
 
-typedef list<Vertex> VertexList;
+typedef std::list<Vertex> VertexList;
 typedef VertexList::iterator VertexIter;
 
 class DAG
 {
 private:
 	VertexList vertices; //list of vertices
-	map<int, VertexIter> vindex; //index to find vertex with certain id in the list
-	typedef map<int, VertexIter> VertexMap;
+	std::map<int, VertexIter> vindex; //index to find vertex with certain id in the list
+	typedef std::map<int, VertexIter> VertexMap;
 	typedef VertexMap::iterator VertexMapIter;
 
 	// int rootid;
@@ -163,7 +165,7 @@ public:
 	bool checkVertex(int id) const;
 
 	int getVertexList(IdList &list) const;
-	int getVertexString(string &str) const;
+	int getVertexString(std::string &str) const;
 
 	int getMultiParentVertices(IdList &list) const;
 
