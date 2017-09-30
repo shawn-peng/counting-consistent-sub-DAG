@@ -2181,8 +2181,8 @@ int pivot_by_flow_bidirectional(DAG *g, pair<DAG, DAG> &subprobs)
 	{
 		int id = *iter;
 
-		double upflow = get_up_flow(g, id);
-		double downflow = get_down_flow(g, id);
+		double upflow = get_up_flow(&gflow, id);
+		double downflow = get_down_flow(&gflow, id);
 		double flow = max(upflow, downflow);
 		if (flow > max_flow)
 		{
