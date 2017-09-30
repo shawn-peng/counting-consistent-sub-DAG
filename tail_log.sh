@@ -15,8 +15,9 @@ fi
 # tail -f ${log} |grep "\[[1-${level}]\]"
 
 #grep_str="\[\([1-9]\|[1][0-9]\)\]"
-grep_str="\[\([1-9]\)\]"
+grep_str="\[\([1-9]\|1[0-1]\)\]"
 grep "$grep_str" ${log}
+echo "end of history."
 tail -f ${log} |grep "$grep_str"
 
 
