@@ -28,14 +28,22 @@
 #include <gmpxx.h>
 
 
+using namespace std;
+using namespace NS_DAG;
+
 static const bool debugging = false;
 
 static const bool verify_hash = false;
 
 static const bool debug_flow = false;
 
-using namespace std;
-using namespace NS_DAG;
+static const bool using_pivot = false;
+
+static const bool g_using_hash = false;
+
+static const bool using_pruning = false;
+
+static const string pivot_method = "flow";
 
 typedef mpz_class number_t;
 //typedef double number_t;
@@ -1780,7 +1788,7 @@ number_t count_consistent_subdag_for_independent_subdag_nonrecursive(DAG *g, boo
 
 	string vs;
 	get_signature(g, vs);
-	if (using_hash && !verify_hash)
+	if (g_using_hash && !verify_hash)
 	{
 		//printf("vertices: %s\n", vs.c_str());
 		//printf("Hash count: %d\n", hash_table.size());
@@ -1907,7 +1915,7 @@ number_t count_consistent_subdag_for_independent_subdag_nonrecursive(DAG *g, boo
 	//print_id_list(roots);
 	//printf("): %.0f.\n", total);
 
-	if (using_hash)
+	if (g_using_hash)
 	{
 		if (!verify_hash)
 		{
@@ -2243,7 +2251,7 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 
 	string vs;
 	get_signature(g, vs);
-	if (using_hash && !verify_hash)
+	if (g_using_hash && !verify_hash)
 	{
 		//printf("vertices: %s\n", vs.c_str());
 		//printf("Hash count: %d\n", hash_table.size());
@@ -2387,7 +2395,7 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 		}
 	}
 
-	if (using_hash)
+	if (g_using_hash)
 	{
 		if (!verify_hash)
 		{
@@ -2632,7 +2640,7 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 	get_signature(&modified, vs);
 	//printf("vertices: %s\n", vs.c_str());
 	//printf("Hash count: %d\n", hash_table.size());
-	if (using_hash && !verify_hash)
+	if (g_using_hash && !verify_hash)
 	{
 		//printf("vertices: %s\n", vs.c_str());
 		//printf("Hash count: %d\n", hash_table.size());
@@ -2792,7 +2800,7 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 	privdata.type = DT_EMPTY;
 	modified.setPrivData(privdata);
 
-	if (using_hash)
+	if (g_using_hash)
 	{
 		if (!verify_hash)
 		{
