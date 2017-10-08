@@ -51,7 +51,8 @@ int Rand()
 }
 
 
-static string data_dir = "data/simulated_dags2/";
+//static string data_dir = "data/simulated_dags2/";
+static string data_dir = "data/simulated_dags/";
 
 void output_rand_dag(int nv, int depth)
 {
@@ -129,7 +130,7 @@ void output_rand_dag(int nv, int depth)
 			counts.insert(x);
 		}
 		//if (counts.size() > 1000)
-		if (i > 100)
+		if (i > 1000)
 		{
 			cerr << "overlapping_times: " << overlapping_times << endl <<
 				"dag generated: " << counts.size() << endl;
@@ -181,9 +182,10 @@ int main(int argc, char **argv)
 	//string categ;
 	stringstream ss;
 
-	for (int nv = 43; nv <= 100; nv++)
+	for (int nv = 150; nv <= 150; nv++)
 	{
-		for (int depth = 2; depth <= nv; depth++)
+		//for (int depth = 2; depth <= nv; depth++)
+		for (int depth = 5; depth <= 5; depth++)
 		{
 			output_rand_dag(nv, depth);
 		}
