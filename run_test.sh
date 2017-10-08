@@ -16,10 +16,15 @@ if [ $? -ne 0 ]; then
 	exit 1
 fi
 
+trap "rm -f $lckf && echo 'Quit testing' && exit 0" SIGINT
+
 for gfile in $filelist;
 do
 	#echo $gfile
 	./graph_alg $gfile > ${logfile}
+	if [[ $? != 0 ]]; then
+		break;
+	fi
 	count=$(sed -ne 's/^Num of consistent sub-DAG: \([0-9]*\)$/\1/p' ${logfile})
 	count0=$(sed -ne 's/^(Sanity check)Num of consistent sub-DAG: \([0-9]*\)$/\1/p' ${logfile})
 

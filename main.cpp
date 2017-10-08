@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
 	g->generateRoots();
 	g->getRootList(rootlist);
 
-	//g->setRoot(rootid);
+	//g->setSingleRoot(rootid);
 	int ret;
 
 	g->print();
@@ -42,7 +42,6 @@ int main(int argc, char *argv[])
 	list<DAG> subdags;
 	number_t check_num;
 	//if (g->getVertexNum() <= 35)
-	//if (0)
 	//{
 	//	if (rootlist.size() == 1)
 	//	{
@@ -59,7 +58,7 @@ int main(int argc, char *argv[])
 	//		{
 	//			new_g.addEdge(0, *iter);
 	//		}
-	//		new_g.setRoot(0);// set as the only root
+	//		new_g.setSingleRoot(0);// set as the only root
 	//		//rootid = rootlist.front();
 	//		printf("DAG with virtual root:\n");
 	//		new_g.print();
@@ -67,7 +66,7 @@ int main(int argc, char *argv[])
 	//		// remove the subdag with only the virtual root
 	//		subdags.pop_front();
 	//	}
-	//	check_num = subdags.size();
+	//	check_num = subdags.size() + 1;
 	//}
 	//else
 	//{

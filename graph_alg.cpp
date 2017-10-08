@@ -17,14 +17,24 @@
 #include <iostream>
 #include <algorithm>
 #include <queue>
+#include <set>
 #include <map>
 #include <unordered_map>
+#include <unordered_set>
 #include <sstream>
 #include <memory>
 #include <limits.h>
 
 #include <gmpxx.h>
 
+
+static const bool debugging = false;
+
+static const bool verify_hash = false;
+
+static const bool debug_flow = false;
+
+using namespace std;
 using namespace NS_DAG;
 
 typedef mpz_class number_t;
@@ -35,7 +45,7 @@ struct PathInfo
 {
 	int depth;
 	int depthParent;
-	map<int, IdList> pathMap; //map<MPnode, children on path to MPnode>
+	map<int, IdList> pathMap; //map<MPnode, children of the roots on path to MPnode>
 	PathInfo() : depth(0), depthParent(0) {}
 };
 
@@ -51,8 +61,40 @@ struct ParentInfo
 
 struct PathNode
 {
+	int id;
 	int depth;
-	Vertex *v;
+	//Vertex *v;
+
+	PathNode() : id(-1), depth(-1) {}
+	PathNode(int id, int depth) : id(id), depth(depth) {}
+	
+	bool operator <(const PathNode &rhs) const
+	{
+		if (depth < rhs.depth)
+		{
+			return true;
+		}
+		else if (depth == rhs.depth)
+		{
+			return id < rhs.id;
+		}
+		else
+		{
+			return false;
+		}
+	}
+};
+
+typedef mpq_class Rational;
+typedef Rational Flow_t;
+struct Flows
+{
+	Flow_t down_flow;
+	Flow_t up_flow;
+	Flow_t each_down_flow;
+	Flow_t each_up_flow;
+	Flows() : down_flow(0.0), up_flow(0.0),
+		each_down_flow(0.0), each_up_flow(0.0){}
 };
 
 
@@ -91,19 +133,10 @@ void print_id_list(const IdList &list)
 	return;
 }
 
+int print_privdata_num(const PrivDataUnion *data);
 int print_privdata(const PrivDataUnion *data)
 {
-	//return printf("%.0f", data->ddouble);
-	void *p = data->dptr.get();
-	if (!p)
-	{
-		return 0;
-	}
-	const number_t &num = *(number_t *)(p);
-	stringstream ss;
-	ss << num;
-	printf("%s", ss.str().c_str());
-	return ss.str().size();
+	print_privdata_num(data);
 }
 
 int print_privdata_int(const PrivDataUnion *data)
@@ -113,12 +146,35 @@ int print_privdata_int(const PrivDataUnion *data)
 
 int print_privdata_num(const PrivDataUnion *data)
 {
-	//return printf("%.0f", data->ddouble);
-	const number_t &num = *(number_t *)(data->dptr.get());
+	void *p = data->dptr.get();
+	number_t num;
+	if (p)
+	{
+		num = *(number_t *)(p);
+	}
+	else
+	{
+		num = 0;
+	}
 	stringstream ss;
 	ss << num;
 	printf("%s", ss.str().c_str());
 	return ss.str().size();
+}
+
+int print_privdata_flow(const PrivDataUnion *data)
+{
+	void *p = data->dptr.get();
+	Flows flows;
+	if (p)
+	{
+		flows = *(Flows *)(p);
+	}
+	
+	stringstream ss;
+	ss << "down:" << flows.down_flow << ", up:" << flows.up_flow;
+	return printf("%s", ss.str().c_str());
+	//return printf("down:%f, up:%f", flows.down_flow, flows.up_flow);
 }
 
 int print_privdata_ptr(const PrivDataUnion *data)
@@ -145,7 +201,7 @@ int print_privdata_pathinfo(const PrivDataUnion *data)
 }
 
 
-number_t &getNumFromPrivData(PrivDataUnion &data)
+number_t &get_num_from_priv_data(PrivDataUnion &data)
 {
 	shared_ptr<void> &p = data.dptr;
 	if (!p)
@@ -157,7 +213,8 @@ number_t &getNumFromPrivData(PrivDataUnion &data)
 	return *(number_t *)vp;
 }
 
-void setNumToPrivData(PrivDataUnion &data, const number_t &num)
+// will alloc a new object
+void set_num_to_priv_data(PrivDataUnion &data, const number_t &num)
 {
 	//void *p = data.dptr;
 	//if (p)
@@ -173,10 +230,11 @@ void setNumToPrivData(PrivDataUnion &data, const number_t &num)
 	//}
 	//*p = num;
 	shared_ptr<void> &p = data.dptr;
-	p = make_shared<number_t>(0);
-	data.type = DT_POINTER;
+	p = make_shared<number_t>(num);
 	shared_ptr<number_t> np = static_pointer_cast<number_t>(p);
-	*np = num;
+	data.type = DT_POINTER;
+	//*np = num;
+	return;
 }
 
 void updateNumInPrivData(PrivDataUnion &data, const number_t &num)
@@ -198,6 +256,111 @@ int setPtrToPrivData(PrivDataUnion &data, T *p)
 	data.dptr = shared_ptr<void>(p);
 	data.type = DT_POINTER;
 	return 0;
+}
+
+void set_down_flow(DAG *g, int id, Flow_t flow)
+{
+	PrivDataUnion &data = g->getPrivData(id);
+	shared_ptr<void> &p = data.dptr;
+	if (!p)
+	{
+		// alloc a Flows structure
+		p = make_shared<Flows>();
+		data.type = DT_POINTER;
+	}
+	Flows &flows = *static_pointer_cast<Flows>(data.dptr);
+	flows.down_flow = flow;
+	return;
+}
+
+void set_up_flow(DAG *g, int id, Flow_t flow)
+{
+	PrivDataUnion &data = g->getPrivData(id);
+	shared_ptr<void> &p = data.dptr;
+	if (!p)
+	{
+		// alloc a Flows structure
+		p = make_shared<Flows>();
+		data.type = DT_POINTER;
+	}
+	Flows &flows = *static_pointer_cast<Flows>(data.dptr);
+	flows.up_flow = flow;
+	return;
+}
+
+Flow_t get_down_flow(DAG *g, int id)
+{
+	PrivDataUnion &data = g->getPrivData(id);
+	shared_ptr<void> &p = data.dptr;
+	assert(p); // we ensure that every flow has been set before we read it
+	Flows &flows = *static_pointer_cast<Flows>(p);
+	return flows.down_flow;
+}
+
+Flow_t get_up_flow(DAG *g, int id)
+{
+	PrivDataUnion &data = g->getPrivData(id);
+	shared_ptr<void> &p = data.dptr;
+	assert(p); // we ensure that every flow has been set before we read it
+	Flows &flows = *static_pointer_cast<Flows>(p);
+	return flows.up_flow;
+}
+
+void set_each_down_flow(DAG *g, int id, Flow_t flow)
+{
+	PrivDataUnion &data = g->getPrivData(id);
+	shared_ptr<void> &p = data.dptr;
+	if (!p)
+	{
+		// alloc a Flows structure
+		p = make_shared<Flows>();
+		data.type = DT_POINTER;
+	}
+	Flows &flows = *static_pointer_cast<Flows>(data.dptr);
+	flows.each_down_flow = flow;
+	return;
+}
+
+void set_each_up_flow(DAG *g, int id, Flow_t flow)
+{
+	PrivDataUnion &data = g->getPrivData(id);
+	shared_ptr<void> &p = data.dptr;
+	if (!p)
+	{
+		// alloc a Flows structure
+		p = make_shared<Flows>();
+		data.type = DT_POINTER;
+	}
+	Flows &flows = *static_pointer_cast<Flows>(data.dptr);
+	flows.each_up_flow = flow;
+	return;
+}
+
+Flow_t get_each_down_flow(DAG *g, int id)
+{
+	PrivDataUnion &data = g->getPrivData(id);
+	shared_ptr<void> &p = data.dptr;
+	assert(p); // we ensure that every flow has been set before we read it
+	Flows &flows = *static_pointer_cast<Flows>(p);
+	return flows.each_down_flow;
+}
+
+Flow_t get_each_up_flow(DAG *g, int id)
+{
+	PrivDataUnion &data = g->getPrivData(id);
+	shared_ptr<void> &p = data.dptr;
+	assert(p); // we ensure that every flow has been set before we read it
+	Flows &flows = *static_pointer_cast<Flows>(p);
+	return flows.each_up_flow;
+}
+
+Flow_t get_sum_flow(DAG *g, int id)
+{
+	PrivDataUnion &data = g->getPrivData(id);
+	shared_ptr<void> &p = data.dptr;
+	assert(p); // we ensure that every flow has been set before we read it
+	Flows &flows = *static_pointer_cast<Flows>(p);
+	return flows.down_flow + flows.up_flow;
 }
 
 //static map<int, int> parent_num_map;
@@ -360,7 +523,7 @@ void freePathInfo(void *ptr)
 int free_nodes_pathinfo(DAG *g)
 {
 	IdList fringe;
-	//int rootid = g->getRoot();
+	//int rootid = g->getFirstRoot();
 	//fringe.push_back(rootid);
 	g->getRootList(fringe);
 
@@ -462,7 +625,7 @@ int get_signature(DAG *g, string &str)
 }
 
 
-int get_descendents_subdag(DAG *g, int id, DAG &subdag)
+int get_descendants_subdag(DAG *g, int id, DAG &subdag)
 {
 	if (subdag.getVertexNum() == 0)
 	{
@@ -482,14 +645,14 @@ int get_descendents_subdag(DAG *g, int id, DAG &subdag)
 	FOR_EACH_IN_CONTAINER(iter, children)
 	{
 		int cid = *iter;
-		get_descendents_subdag(g, cid, subdag);
+		get_descendants_subdag(g, cid, subdag);
 		subdag.addEdge(id, cid);
 	}
 
 	return 0;
 }
 
-int get_path_to_root(DAG *g, int id, DAG &subdag)
+int get_ancestors_subdag(DAG *g, int id, DAG &subdag)
 {
 	if (g->isRoot(id))
 	{
@@ -509,7 +672,7 @@ int get_path_to_root(DAG *g, int id, DAG &subdag)
 	FOR_EACH_IN_CONTAINER(iter, parents)
 	{
 		int pid = *iter;
-		get_path_to_root(g, pid, subdag);
+		get_ancestors_subdag(g, pid, subdag);
 		subdag.addEdge(pid, id);
 	}
 
@@ -517,10 +680,10 @@ int get_path_to_root(DAG *g, int id, DAG &subdag)
 }
 
 ////D(u), get the smallest consistent sub-DAG for vertex u with ID(id)
-//int get_path_to_root(DAG *g, int id, DAG &subdag)
+//int get_ancestors_subdag(DAG *g, int id, DAG &subdag)
 //{
 //	// may need several path
-//	//int rootid = g->getRoot();
+//	//int rootid = g->getFirstRoot();
 //
 //	Vertex *v = subdag.findVertex(id);
 //	subdag.addVertex(id);
@@ -557,7 +720,7 @@ int get_path_to_root(DAG *g, int id, DAG &subdag)
 //		}
 //		else
 //		{
-//			get_path_to_root(g, pid, subdag);
+//			get_ancestors_subdag(g, pid, subdag);
 //		}
 //	}
 //	return 0;
@@ -569,7 +732,7 @@ int get_path_to_root_with_exclusion(DAG *g, int id,
 		const IdList &exclude, DAG &subdag)
 {
 	// may need several path
-	//int rootid = g->getRoot();
+	//int rootid = g->getFirstRoot();
 
 	Vertex *v = subdag.findVertex(id); // here we want to see if v exists already
 	subdag.addVertex(id);
@@ -629,7 +792,7 @@ int add_path_to_pathmap(DAG *g, int targetid, const DAG &pathdag)
 {
 	IdList fringe;
 
-	//int rootid = g->getRoot();
+	//int rootid = g->getFirstRoot();
 	//fringe.push_back(rootid);
 
 	pathdag.getRootList(fringe);
@@ -673,7 +836,7 @@ int add_path_to_pathmap(DAG *g, int targetid, const DAG &pathdag)
 int gen_mpnode_pathinfo(DAG *g, IdList mpnodes)
 {
 	IdList fringe;
-	//int rootid = g->getRoot();
+	//int rootid = g->getFirstRoot();
 	//fringe.push_back(rootid);
 	IdList roots;
 	g->getRootList(roots);
@@ -742,7 +905,7 @@ int gen_mpnode_pathinfo(DAG *g, IdList mpnodes)
 	FOR_EACH_IN_CONTAINER(iter, mpnodes)
 	{
 		DAG pathdag;
-		get_path_to_root(g, *iter, pathdag);
+		get_ancestors_subdag(g, *iter, pathdag);
 		add_path_to_pathmap(g, *iter, pathdag);
 	}
 
@@ -751,42 +914,42 @@ int gen_mpnode_pathinfo(DAG *g, IdList mpnodes)
 	return 0;
 }
 
-
-int add_node_to_pathnode_queue(list<PathNode> &pl, PathNode x)
-{
-	//pl is sorted
-	//first by depth (decreasing) then by id (increasing)
-	FOR_EACH_IN_CONTAINER(iter, pl)
-	{
-		if (iter->depth > x.depth)
-		{
-			continue;
-		}
-		else if (iter->depth == x.depth)
-		{
-			if (iter->v->getId() < x.v->getId())
-			{
-				continue;
-			}
-			else if (iter->v->getId() == x.v->getId())
-			{
-				return 0;
-			}
-			else
-			{
-				pl.insert(iter, x);
-				return 0;
-			}
-		}
-		else
-		{
-			pl.insert(iter, x);
-			return 0;
-		}
-	}
-	pl.insert(pl.end(), x);
-	return 0;
-}
+// list approach is too slow
+//int add_node_to_pathnode_queue(list<PathNode> &pl, PathNode x)
+//{
+//	//pl is sorted
+//	//first by depth (decreasing) then by id (increasing)
+//	FOR_EACH_IN_CONTAINER(iter, pl)
+//	{
+//		if (iter->depth > x.depth)
+//		{
+//			continue;
+//		}
+//		else if (iter->depth == x.depth)
+//		{
+//			if (iter->v->getId() < x.v->getId())
+//			{
+//				continue;
+//			}
+//			else if (iter->v->getId() == x.v->getId())
+//			{
+//				return 0;
+//			}
+//			else
+//			{
+//				pl.insert(iter, x);
+//				return 0;
+//			}
+//		}
+//		else
+//		{
+//			pl.insert(iter, x);
+//			return 0;
+//		}
+//	}
+//	pl.insert(pl.end(), x);
+//	return 0;
+//}
 
 // Still DAG decomposition
 /*int find_independent_subdag_root(DAG *g, int id)
@@ -821,86 +984,192 @@ int add_node_to_pathnode_queue(list<PathNode> &pl, PathNode x)
 	return id;
 }*/
 
-int find_root_consistent_to_vertices(DAG *g, IdList nodes)
+int get_topological_order(DAG *g, IdList &list)
 {
-	// profiling
-	func_calls[__FUNCTION__]++;
-
-	list<PathNode> paths_queue;
-
-	PathNode node;
-
-	FOR_EACH_IN_CONTAINER(iter, nodes)
+	DAG modified(*g);
+	
+	// The following is equivalent to Kahn's algorithm.
+	// Add roots to order list, then remove roots.
+	// Keep doing this untill empty.
+	// We do this because we cannot iterate edges directly
+	// and remove them in a constant time.
+	while(modified.getRootNum() > 0)
 	{
-		Vertex *v = g->findVertex(*iter);
-		node.v = v;
+		IdList fringe;
+		modified.getRootList(fringe);
 
-		PathInfo *pinfo = get_path_info(v);
-		node.depth = pinfo->depth;
+		FOR_EACH_IN_CONTAINER(iter, fringe)
+		{
+			modified.removeVertex(*iter);
+		}
 
-		add_node_to_pathnode_queue(paths_queue, node);
+		list.splice(list.end(), fringe);
 	}
 
-	node = paths_queue.front();
-	int id = node.v->getId();
-	paths_queue.pop_front();
+	assert(modified.getVertexNum() == 0);
+	return 0;
+}
 
-	ParentNumMap &parent_num_map = get_parent_info(g).parentNumMap;
+int perform_graph_flow(DAG *g)
+{
+	//IdList fringe;
+	IdList nodes;
 
-	while (!paths_queue.empty() ||
-			parent_num_map[id] > 1)
+	// get topological order
+	IdList topo;
+	get_topological_order(g, topo);
+
+	// down flow
+	FOR_EACH_IN_CONTAINER(iter, topo)
 	{
-		if (parent_num_map[id] == 0)
-		{
-			// all nodes left in paths queue are root
-			id = -1;
-			break;
-		}
-		//VertexDepthInfo &entry = paths_queue.front();
+		int id = *iter;
+
+		Flow_t sum_in_flow = 1.0;// 1.0 for self
+
 		IdList parents;
 		g->getParentList(id, parents);
-		FOR_EACH_IN_CONTAINER(iter, parents)
+
+		FOR_EACH_IN_CONTAINER(it, parents)
 		{
-			//VertexDepthInfo node;
-			node.v = g->findVertex(*iter);
-			shared_ptr<PathInfo> pinfo = static_pointer_cast<PathInfo>(node.v->getPrivData().dptr);
-			node.depth = pinfo->depth;
-			add_node_to_pathnode_queue(paths_queue, node);
-			//printf("push depth %d: %07d\n", node.depth, node.v->getId());
+			int pid = *it;
+			Flow_t x = get_each_down_flow(g, pid);
+			assert(x != 0);
+			sum_in_flow += x;
 		}
-		node = paths_queue.front();
-		id = node.v->getId();
-		paths_queue.pop_front();
-		//printf("pop depth %d: %07d\n", node.depth, node.v->getId());
+
+		set_down_flow(g, id, sum_in_flow);
+		
+		int n = g->getChildNum(id);
+		Flow_t each_out_flow;
+		if (n != 0)
+		{
+			each_out_flow = sum_in_flow / n;
+			set_each_down_flow(g, id, each_out_flow);
+		}
 	}
 
-	return id;
+	// up flow
+	FOR_EACH_IN_CONTAINER_REVERSE(riter, topo)
+	{
+		int id = *riter;
+
+		Flow_t sum_in_flow = 1.0; // 1.0 for self
+
+		IdList children;
+		g->getChildList(id, children);
+
+		FOR_EACH_IN_CONTAINER(it, children)
+		{
+			int chid = *it;
+			Flow_t x = get_each_up_flow(g, chid);
+			assert(x != 0);
+			sum_in_flow += x;
+		}
+
+		set_up_flow(g, id, sum_in_flow);
+		
+		int n = g->getParentNum(id);
+		Flow_t each_out_flow;
+		if (n != 0)
+		{
+			each_out_flow = sum_in_flow / n;
+			set_each_up_flow(g, id, each_out_flow);
+		}
+	}
+
+	return 0;
 }
+
+//int find_root_consistent_to_vertices(DAG *g, IdList nodes)
+//{
+//	// profiling
+//	func_calls[__FUNCTION__]++;
+//
+//	//list<PathNode> paths_queue;
+//	priority_queue<PathNode> paths_queue;
+//
+//	PathNode node;
+//
+//	FOR_EACH_IN_CONTAINER(iter, nodes)
+//	{
+//		Vertex *v = g->findVertex(*iter);
+//		node.id = v->getId();
+//
+//		PathInfo *pinfo = get_path_info(v);
+//		node.depth = pinfo->depth;
+//
+//		//add_node_to_pathnode_queue(paths_queue, node);
+//		paths_queue.push(node);
+//	}
+//
+//	node = paths_queue.top();
+//	int id = node.id;
+//	paths_queue.pop();
+//
+//	ParentNumMap &parent_num_map = get_parent_info(g).parentNumMap;
+//
+//	while (!paths_queue.empty() ||
+//			parent_num_map[id] > 1)
+//	{
+//		if (parent_num_map[id] == 0)
+//		{
+//			// all nodes left in paths queue are root
+//			id = -1;
+//			break;
+//		}
+//		//VertexDepthInfo &entry = paths_queue.front();
+//		IdList parents;
+//		g->getParentList(id, parents);
+//		FOR_EACH_IN_CONTAINER(iter, parents)
+//		{
+//			//VertexDepthInfo node;
+//			//node.v = g->findVertex(*iter);
+//			node.id = *iter;
+//			//shared_ptr<PathInfo> pinfo = static_pointer_cast<PathInfo>(g->getPrivData().dptr);
+//
+//			Vertex *v = g->findVertex(*iter);
+//			PathInfo *pinfo = get_path_info(v);
+//
+//			node.depth = pinfo->depth;
+//			//add_node_to_pathnode_queue(paths_queue, node);
+//			paths_queue.push(node);
+//			//printf("push depth %d: %07d\n", node.depth, node.v->getId());
+//		}
+//		node = paths_queue.top();
+//		id = node.id;
+//		paths_queue.pop();
+//		printf("pop depth %d: %07d\n", node.depth, node.id);
+//	}
+//
+//	return id;
+//}
 
 int find_roots_consistent_to_vertices(DAG *g, IdList nodes, IdList &roots)
 {
 	// profiling
 	func_calls[__FUNCTION__]++;
 
-	list<PathNode> paths_queue;
+	//list<PathNode> paths_queue;
+	set<PathNode> paths_queue;
 
 	PathNode node;
 
 	FOR_EACH_IN_CONTAINER(iter, nodes)
 	{
-		Vertex *v = g->findVertex(*iter);
-		node.v = v;
+		node.id = *iter;
 
+		Vertex *v = g->findVertex(*iter);
 		PathInfo *pinfo = get_path_info(v);
 		node.depth = pinfo->depth;
 
 		// node are inserted with sorting of depth
-		add_node_to_pathnode_queue(paths_queue, node);
+		//add_node_to_pathnode_queue(paths_queue, node);
+		paths_queue.insert(node);
 	}
 
-	node = paths_queue.front();
-	int id = node.v->getId();
-	paths_queue.pop_front();
+	node = *paths_queue.rbegin();
+	int id = node.id;
+	paths_queue.erase(--paths_queue.end());
 
 	ParentNumMap &parent_num_map = get_parent_info(g).parentNumMap;
 
@@ -918,23 +1187,30 @@ int find_roots_consistent_to_vertices(DAG *g, IdList nodes, IdList &roots)
 		g->getParentList(id, parents);
 		FOR_EACH_IN_CONTAINER(iter, parents)
 		{
-			//VertexDepthInfo node;
-			node.v = g->findVertex(*iter);
-			shared_ptr<PathInfo> pinfo = static_pointer_cast<PathInfo>(node.v->getPrivData().dptr);
+			node.id = *iter;
+			//shared_ptr<PathInfo> pinfo = static_pointer_cast<PathInfo>(g->getPrivData().dptr);
+
+			Vertex *v = g->findVertex(node.id);
+			PathInfo *pinfo = get_path_info(v);
+
 			node.depth = pinfo->depth;
-			add_node_to_pathnode_queue(paths_queue, node);
+			//add_node_to_pathnode_queue(paths_queue, node);
+			paths_queue.insert(node);
 			//printf("push depth %d: %07d\n", node.depth, node.v->getId());
 		}
-		node = paths_queue.front();
-		id = node.v->getId();
-		paths_queue.pop_front();
-		//printf("pop depth %d: %07d\n", node.depth, node.v->getId());
+		node = *paths_queue.rbegin();
+		id = node.id;
+		//paths_queue.pop();
+		paths_queue.erase(--paths_queue.end());
+		//printf("pop depth %d: %07d\n", node.depth, node.id);
 	}
 
-	roots.push_back(id);
-	FOR_EACH_IN_CONTAINER(iter, paths_queue)
+	roots.push_front(id);
+	//FOR_EACH_IN_CONTAINER(iter, paths_queue)
+	while (!paths_queue.empty())
 	{
-		roots.push_back(iter->v->getId());
+		roots.push_front(paths_queue.rbegin()->id);
+		paths_queue.erase(--paths_queue.end());
 	}
 
 	return roots.size();
@@ -947,7 +1223,10 @@ int decompose_dag(DAG *g, const IdList &mpnodes, list<DAG> &subdags)
 	// profiling
 	func_calls[__FUNCTION__]++;
 
-	//int realroot = g->getRoot();
+	//printf("trying decomposing dag: \n");
+	//g->print();
+
+	//int realroot = g->getFirstRoot();
 	IdList realroots;
 	g->getRootList(realroots);
 	IdList removed_mpnodes;
@@ -992,7 +1271,6 @@ int decompose_dag(DAG *g, const IdList &mpnodes, list<DAG> &subdags)
 			newroots.clear();
 			int ret = find_roots_consistent_to_vertices(
 					&pathinfo_dag, covered_mpnodes, newroots);
-			//printf("independent root %07d for node %07d.\n", newrootid, id);
 
 			// get map of paths to all mpnodes, check consistency of
 			// subdag with roots
@@ -1104,7 +1382,10 @@ int enum_possibilities(DAG *g, DAG cur_subdag, list<Edge> fringe, IdList needed,
 	}
 	else
 	{
-		cur_subdag.addVertex(vid);
+		if (!cur_subdag.checkVertex(vid))
+		{
+			cur_subdag.addVertex(vid);
+		}
 		//just add one Edge
 		cur_subdag.addEdge(edge.first, vid);
 	}
@@ -1158,7 +1439,7 @@ int get_consistent_subdag(DAG *g, int rootid, list<DAG> &subdags)
 
 	DAG g0;
 	g0.addVertex(rootid);
-	g0.setRoot(rootid);
+	g0.setSingleRoot(rootid);
 
 	EdgeList fringe;
 
@@ -1253,28 +1534,30 @@ int remove_subdag_to_become_trees(DAG *g, int rootid, list<DAG> &subdags)
 //for tree case
 number_t count_consistent_subdag_tree(DAG *g, int rootid)
 {
-	IdList children;
-	Vertex *v = g->findVertex(rootid);
-	assert(v);
-	//number_t total = v->getPrivData().ddouble;
-	PrivDataUnion data = v->getPrivData();
-	number_t total = getNumFromPrivData(data);
-	if (total != 0)
+	PrivDataUnion data = g->getPrivData(rootid);
+	number_t total = get_num_from_priv_data(data);
+	if (total == 0)
 	{
-		//printf("num %.0f for %07d.\n", total, rootid);
-		return total;
+		total = 2;
+	}
+	else if (total == 1)
+	{
+		assert(0);
+	}
+	else
+	{
+		assert(!g->isInternal(rootid));
 	}
 
-	total = 1.0;
+	number_t num = 1;
+	IdList children;
 	g->getChildList(rootid, children);
 	FOR_EACH_IN_CONTAINER(iter, children)
 	{
-		total *= (1 + count_consistent_subdag_tree(g, *iter));
+		num *= count_consistent_subdag_tree(g, *iter);
 	}
-	//PrivDataUnion data;
-	//data.ddouble = total;
-	setNumToPrivData(data, total);
-	g->setPrivData(rootid, data);
+
+	total += num - 1;
 
 	return total;
 }
@@ -1289,171 +1572,12 @@ number_t count_consistent_subdag_tree(DAG *g)
 	FOR_EACH_IN_CONTAINER(rootit, roots)
 	{
 		int rootid = *rootit;
-		total *= (1 + count_consistent_subdag_tree(g, rootid));
-	}
-
-	total -= 1;
-
-	return total;
-}
-
-
-// g(r - cutted)
-number_t count_consistent_subdag_cutting_children(DAG *g, int rootid, const IdList &cutted)
-{
-	assert(g->findVertex(rootid));
-	//number_t count = g->getPrivData(rootid).ddouble;
-	PrivDataUnion data = g->getPrivData(rootid);
-	number_t count = getNumFromPrivData(data);
-
-	ParentNumMap &parent_num_map = get_parent_info(g).parentNumMap;
-
-	IdList children;
-	g->getChildList(rootid, children);
-	FOR_EACH_IN_CONTAINER(iter, cutted)
-	{
-		// the cutted nodes should all be children of root
-		int idcutted = *iter;
-		IdList::iterator clit =
-			find(children.begin(), children.end(), idcutted);
-		if (clit == children.end())
-		{
-			// cutted vertex/edge hasn't been added to this dag,
-			// so it's already cutted. (Acctually, vertex added but
-			// edge not added should never be the case.)
-			continue;
-		}
-		if (parent_num_map[idcutted] > 1)
-		{
-			// multi-parent node is added to the dag in calculation
-			// this also shouldn't be divided
-			continue;
-		}
-
-		// we can calculate this number by divide the number of
-		// not cutting by the number of cutted vertex plus 1.
-		// (Proof see report)
-		//count /= g->getPrivData(idcutted).ddouble + 1;
-		data = g->getPrivData(idcutted);
-		count /= getNumFromPrivData(data) + 1;
-	}
-	return count;
-}
-
-
-// g(u|fixed), calculate the number of possibilities with fixed path
-number_t count_comb_with_fixed_nodes(DAG *g, const DAG &fixed)
-{
-	// All independent nodes must in the fixed list
-	IdList vs;
-	fixed.getVertexList(vs);
-
-	number_t total = 1.0;
-
-	FOR_EACH_IN_CONTAINER(fixedvit, vs)
-	{
-		IdList fixed_children; // this would be the cutted nodes
-		fixed.getChildList(*fixedvit, fixed_children);
-		if (fixed_children.empty())
-		{
-			// this should mean that this node is the root of the subdag
-			// or maybe there are multiple independent MP node in fixed
-			// all treated as the same.
-			//total *= g->getPrivData(*fixedvit).ddouble;
-			PrivDataUnion data = g->getPrivData(*fixedvit);
-			total *= getNumFromPrivData(data);
-			continue;
-		}
-
-		//g(r) *= g(f_i - fixed.children(f_i))
-		//f_i : the i-th fixed vertex
-		//Proof see report
-		total *= count_consistent_subdag_cutting_children(
-				g, *fixedvit, fixed_children);
+		total *= count_consistent_subdag_tree(g, rootid);
 	}
 
 	return total;
 }
 
-// for all vertices in list 'nodes', generate the possible combinations
-// and get the path(minimum consistent sub-DAG) for each combination
-// add them to the list 'paths'
-int gen_path_combinations(DAG *g, IdList nodes,
-		IdList &exclude, int fixed,
-		const DAG &fixed_path, list<DAG> &paths)
-{
-	if (nodes.empty())
-	{
-		paths.push_back(fixed_path);
-		return 0;
-	}
-
-	int id = nodes.front();
-	nodes.pop_front();
-
-	// check path
-	Vertex *v = fixed_path.findVertex(id);
-	if (v != NULL)
-	{
-		assert(0);
-		printf("Node %07d already in the path !\n", v->getId());
-		// Then must choosing this node, but not need to add it to path
-		// since it's already done
-		gen_path_combinations(g, nodes, exclude, fixed, fixed_path, paths);
-		return 0;
-	}
-
-	// not choosing
-
-	// add to exclude
-	exclude.push_back(id);
-	gen_path_combinations(g, nodes, exclude, fixed, fixed_path, paths);
-	// then pop it
-	exclude.pop_back();
-
-	if (id != fixed)
-	{
-		// choosing
-		DAG new_path(fixed_path);
-		int ret = get_path_to_root_with_exclusion(
-				g, id, exclude, new_path);
-		if (ret != 0)
-		{
-			// this node can't be choosen, because there are
-			// some parent was not choosen at previous process
-			// then we just need to return
-			return 0;
-		}
-
-
-		gen_path_combinations(g, nodes, exclude, fixed, new_path, paths);
-	}
-
-	return 0;
-}
-
-void uppropagate_counts(DAG *g, int parent,
-		const number_t &new_count, const number_t &old_count)
-{
-	Vertex *v = g->findVertex(parent);
-	PrivDataUnion priv = v->getPrivData();
-	//int this_old = priv.ddouble;
-	//priv.ddouble /= old_count + 1;
-	//priv.ddouble *= new_count + 1;
-	number_t &count = getNumFromPrivData(priv);
-	number_t this_old = count;
-	count /= old_count + 1;
-	count *= new_count + 1;
-	v->setPrivData(priv);
-
-	IdList grandplist;
-	v->getParentList(grandplist);
-	if (grandplist.size() == 1)
-	{
-		uppropagate_counts(g, grandplist.front(),
-				getNumFromPrivData(priv), this_old);
-	}
-}
 
 void clear_nonleaf_counts(DAG *g, int id)
 {
@@ -1462,14 +1586,14 @@ void clear_nonleaf_counts(DAG *g, int id)
 	if (children.size() != 0)
 	{
 		PrivDataUnion data = g->getPrivData(id);
-		number_t &num = getNumFromPrivData(data);
+		number_t &num = get_num_from_priv_data(data);
 		if (num == 0)
 		{
 			// already cleaned following another path
 			return;
 		}
 		num = 0;
-		//setNumToPrivData(data, num);
+		//set_num_to_priv_data(data, num);
 		g->setPrivData(id, data);
 		FOR_EACH_IN_CONTAINER(chit, children)
 		{
@@ -1526,14 +1650,14 @@ void update_info_after_cut(DAG *g, const IdList &old_mpnodes)
 void clear_ancestor_counts(DAG *g, int id)
 {
 	PrivDataUnion data = g->getPrivData(id);
-	number_t num = getNumFromPrivData(data);
+	number_t num = get_num_from_priv_data(data);
 	if (num == 0)
 	{
 		return;
 	}
 
 	num = 0;
-	setNumToPrivData(data, num);
+	set_num_to_priv_data(data, num);
 	g->setPrivData(id, data);
 
 	IdList parents;
@@ -1545,85 +1669,6 @@ void clear_ancestor_counts(DAG *g, int id)
 	return;
 }
 
-/**
- * count_consistent_subdag_by_combining_indep_mpnodes
- *
- * @desc similar to above function, but rather than save all possible paths
- * to a list, calculate the number of consistent sub-DAGs with the
- * fixed path when each path is finished. Then sum them up.
- * This way we can reduce the space complexity.
- *
- * @para g, DAG to count
- * @para nodes, MP nodes to combine, there might be some nodes that are
- * dependent
- * @para exclude, nodes that are not choosen in previous process,
- * this works as a stack
- * @para fixed, the fixed node which is what we are adding
- * @para fixed_path, the fixed path for now
- */
-number_t count_consistent_subdag_by_combining_indep_mpnodes(
-		DAG *g, IdList nodes, IdList &exclude, int fixed,
-		const DAG &fixed_path)
-{
-	number_t total = 0;
-
-	if (nodes.empty())
-	{
-		//fixed_path.print();
-		total += count_comb_with_fixed_nodes(g, fixed_path);
-		return total;
-	}
-
-	int id = nodes.front();
-	nodes.pop_front();
-
-	// check path
-
-	Vertex *v = fixed_path.findVertex(id);
-	if (v != NULL)
-	{
-		assert(0);
-		printf("Node %07d already in the path !\n", v->getId());
-		// Then must choosing this node, but not need to add it to path
-		// since it's already done
-		total += count_consistent_subdag_by_combining_indep_mpnodes(
-				g, nodes, exclude, fixed, fixed_path);
-		return total;
-	}
-
-	// not choosing
-	// first remember the position of path list now
-
-	// add to exclude
-	exclude.push_back(id);
-	total += count_consistent_subdag_by_combining_indep_mpnodes(
-			g, nodes, exclude, fixed, fixed_path);
-	// then pop it
-	exclude.pop_back();
-
-	if (id != fixed)
-	{
-		// choosing
-		DAG new_path(fixed_path);
-		int ret = get_path_to_root_with_exclusion(
-				g, id, exclude, new_path);
-		if (ret != 0)
-		{
-			// this node can't be choosen, because there are
-			// some parent was not choosen at previous process
-			// then we just need to return
-			// Although this node can't be choosen, those possibilities
-			// that not including this node should be returned.
-			return total;
-		}
-
-
-		total += count_consistent_subdag_by_combining_indep_mpnodes(
-				g, nodes, exclude, fixed, new_path);
-	}
-
-	return total;
-}
 
 // g(DAG|fixed) calculate using the cutting fixed path method
 number_t count_consistent_subdag_by_cutting_fixed_path(DAG *g, int fixed, const DAG &fixed_path, bool using_hash = true)
@@ -1655,24 +1700,22 @@ number_t count_consistent_subdag_by_cutting_fixed_path(DAG *g, int fixed, const 
 	IdList rootlist;
 	modified.getRootList(rootlist);
 
-	// there is at least one base case, the path itself
-	number_t total = 1.0;
+	number_t total;
 
 	// Check there is something left
 	if (rootlist.size() != 0)
 	{
 		//printf("DAG after fixed path cutted.\n");
 		//modified.print(print_privdata);
-		total += count_consistent_subdag(&modified, rootlist, using_hash);
+		total = count_consistent_subdag(&modified, rootlist, using_hash);
 	}
 	else
 	{
 		// all nodes need to be fixed
 		printf("Nothing left after cut, all nodes in the DAG needs to be fixed.\n");
+		total = 1;
 	}
 
-	//delete parentInfo;
-	//privdata.dptr = NULL;
 	privdata.dptr.reset();
 	privdata.type = DT_EMPTY;
 	modified.setPrivData(privdata);
@@ -1688,13 +1731,13 @@ number_t count_consistent_subdag_adding_subdag(DAG *g, IdList mpnodes, const DAG
 
 	// the root of subdag must be choosen(fixed)
 
-	//int rootid = g->getRoot();
+	//int rootid = g->getFirstRoot();
 
 	// even for multi-root DAG case, the subdag still have only one root
-	int srid = subdag.getRoot();
+	int srid = subdag.getFirstRoot();
 	DAG pathdag;
-	get_path_to_root(g, srid, pathdag);
-	//pathdag.setRoot(rootid);
+	get_ancestors_subdag(g, srid, pathdag);
+	//pathdag.setSingleRoot(rootid);
 	//printf("--------------------------------------------\n");
 	//printf("Fixed path to root of node: %07d\n", srid);
 	//pathdag.print();
@@ -1737,7 +1780,7 @@ number_t count_consistent_subdag_for_independent_subdag_nonrecursive(DAG *g, boo
 
 	string vs;
 	get_signature(g, vs);
-	if (using_hash)
+	if (using_hash && !verify_hash)
 	{
 		//printf("vertices: %s\n", vs.c_str());
 		//printf("Hash count: %d\n", hash_table.size());
@@ -1763,7 +1806,7 @@ number_t count_consistent_subdag_for_independent_subdag_nonrecursive(DAG *g, boo
 	//{
 	//	printf("the independent subdag have more than one root.\n");
 	//}
-//	int rootid = g->getRoot();
+//	int rootid = g->getFirstRoot();
 	list<DAG> extend_subdags;
 
 	DAG modified(*g);
@@ -1810,7 +1853,7 @@ number_t count_consistent_subdag_for_independent_subdag_nonrecursive(DAG *g, boo
 	while (!extend_subdags.empty())
 	{
 		DAG &subdag = extend_subdags.front();
-		int srid = subdag.getRoot();
+		int srid = subdag.getFirstRoot();
 
 		if (!check_parent(&modified, srid, parent_map))
 		{
@@ -1844,7 +1887,7 @@ number_t count_consistent_subdag_for_independent_subdag_nonrecursive(DAG *g, boo
 
 		extend_subdags.pop_front();
 
-		if (recursion_depth <= 20)
+		//if (recursion_depth <= 20)
 		{
 			for (int di = 1; di < recursion_depth; di++)
 			{
@@ -1866,7 +1909,35 @@ number_t count_consistent_subdag_for_independent_subdag_nonrecursive(DAG *g, boo
 
 	if (using_hash)
 	{
-		hash_table[vs] = total;
+		if (!verify_hash)
+		{
+			hash_table[vs] = total;
+		}
+		else
+		{
+			auto pos = hash_table.find(vs);
+			hash_tries++;
+			if (pos != hash_table.end())
+			{
+				// check with hashed count
+				hash_hits++;
+				if (debugging)
+				{
+					//printf("Hash hit! (%d)\n", hash_hits);
+				}
+				if (pos->second != total)
+				{
+					cout << "Error." << endl;
+					cout << "Hashed count " << pos->second
+						<< " compared to result count " << total << endl;
+					assert(0);
+				}
+			}
+			else
+			{
+				hash_table[vs] = total;
+			}
+		}
 		//printf("hash count: %d (%f)\n",
 		//		hash_table.size(), (number_t)hash_hits/hash_tries);
 	}
@@ -1875,16 +1946,49 @@ number_t count_consistent_subdag_for_independent_subdag_nonrecursive(DAG *g, boo
 	return total;
 }
 
-pair<int, int> analyze_subproblem_scales_MPV(DAG *g, int id)
+void get_subproblems_splitted_by_vertex(DAG *g, int id, DAG &g1, DAG &g2)
 {
-	DAG m1(*g), m2(*g);
+	g1 = *g;
+	g2 = *g;
 
-	DAG ancestors, descendents;
-	get_path_to_root(&m1, id, ancestors);
+	DAG ancestors, descendants;
+	get_ancestors_subdag(&g1, id, ancestors);
+	g1.removeSubdag(ancestors);
+	get_descendants_subdag(&g2, id, descendants);
+	g2.removeSubdag(descendants);
+
+	return;
+}
+void get_subproblems_splitted_by_vertex(DAG *g, int id, std::pair<DAG, DAG> &subproblems)
+{
+	DAG &m1 = subproblems.first;
+	DAG &m2 = subproblems.second;
+
+	m1 = *g;
+	m2 = *g;
+
+	DAG ancestors, descendants;
+	get_ancestors_subdag(&m1, id, ancestors);
 	m1.removeSubdag(ancestors);
-	get_descendents_subdag(&m2, id, descendents);
-	m2.removeSubdag(descendents);
-	//m2.removeSubdagRootAt(id);
+	get_descendants_subdag(&m2, id, descendants);
+	m2.removeSubdag(descendants);
+
+	return;
+}
+
+pair<int, int> analyze_subproblem_scales_MPVnum(DAG *g, int id, std::pair<DAG, DAG> &subproblems)
+{
+	DAG &m1 = subproblems.first;
+	DAG &m2 = subproblems.second;
+
+	get_subproblems_splitted_by_vertex(g, id, subproblems);
+
+	//DAG m1(*g), m2(*g);
+	//DAG ancestors, descendants;
+	//get_ancestors_subdag(&m1, id, ancestors);
+	//m1.removeSubdag(ancestors);
+	//get_descendants_subdag(&m2, id, descendants);
+	//m2.removeSubdag(descendants);
 
 	int s1, s2;
 	IdList mpnodesA, mpnodesD;
@@ -1897,16 +2001,17 @@ pair<int, int> analyze_subproblem_scales_MPV(DAG *g, int id)
 	return make_pair(s1, s2);
 }
 
-pair<int, int> analyze_subproblem_scales_Bound(DAG *g, int id)
+pair<int, int> analyze_subproblem_scales_Bound(DAG *g, int id, pair<DAG, DAG> &subprobs)
 {
-	DAG m1(*g), m2(*g);
+	DAG m1, m2;
+	get_subproblems_splitted_by_vertex(g, id, m1, m2);
 
-	DAG ancestors, descendents;
-	get_path_to_root(&m1, id, ancestors);
-	m1.removeSubdag(ancestors);
-	get_descendents_subdag(&m2, id, descendents);
-	m2.removeSubdag(descendents);
-	//m2.removeSubdagRootAt(id);
+	//DAG m1(*g), m2(*g);
+	//DAG ancestors, descendants;
+	//get_ancestors_subdag(&m1, id, ancestors);
+	//m1.removeSubdag(ancestors);
+	//get_descendants_subdag(&m2, id, descendants);
+	//m2.removeSubdag(descendants);
 
 	int s1, s2;
 	int e1, n1, r1;
@@ -1926,16 +2031,10 @@ pair<int, int> analyze_subproblem_scales_Bound(DAG *g, int id)
 	return make_pair(s1, s2);
 }
 
-pair<int, int> analyze_subproblem_scales_Bound_double_direction(DAG *g, int id, pair<DAG, DAG> &subprobs)
+pair<int, int> analyze_subproblem_scales_Bound_bidirectional(DAG *g, int id, pair<DAG, DAG> &subprobs)
 {
-	DAG m1(*g), m2(*g);
-
-	DAG ancestors, descendents;
-	get_path_to_root(&m1, id, ancestors);
-	m1.removeSubdag(ancestors);
-	get_descendents_subdag(&m2, id, descendents);
-	m2.removeSubdag(descendents);
-	//m2.removeSubdagRootAt(id);
+	DAG &m1(subprobs.first), &m2(subprobs.second);
+	get_subproblems_splitted_by_vertex(g, id, subprobs);
 
 	int s1, s2;
 	int e1, n1, r1;
@@ -1952,8 +2051,8 @@ pair<int, int> analyze_subproblem_scales_Bound_double_direction(DAG *g, int id, 
 	s1 = e1 + n1 + r1;
 	s2 = e2 + n2 + r2;
 
+	// get the scales for the reversed problems
 	int rs1, rs2;
-
 	DAG rm1(m1), rm2(m2);
 	rm1.reverse();
 	rm2.reverse();
@@ -1964,19 +2063,12 @@ pair<int, int> analyze_subproblem_scales_Bound_double_direction(DAG *g, int id, 
 	rs1 = e1 + n1 + r1;
 	rs2 = e2 + n2 + r2;
 
-	if (s1 < rs1)
-	{
-		subprobs.first = m1;
-	}
-	else
+	// check if reversed will be better
+	if (s1 > rs1)
 	{
 		subprobs.first = rm1;
 	}
-	if (s2 < rs2)
-	{
-		subprobs.second = m2;
-	}
-	else
+	if (s2 > rs2)
 	{
 		subprobs.second = rm2;
 	}
@@ -1984,9 +2076,156 @@ pair<int, int> analyze_subproblem_scales_Bound_double_direction(DAG *g, int id, 
 	return make_pair(min(s1,rs1), min(s2,rs2));
 }
 
+
 bool comp_scale_pairs_sum(std::pair<int, int> s1, std::pair<int, int> s2)
 {
 	return ((long long)s1.first + s1.second) < ((long long)s2.first + s2.second);
+}
+
+int pivot_by_Bound(DAG *g, std::pair<DAG, DAG> &best_sub_problems)
+{
+	int best_node = 0;
+
+	IdList nodes;
+	g->getVertexList(nodes);
+
+	// find the best node to split count
+	pair<int, int> min_scales = make_pair(INT_MAX, INT_MAX);
+	//FOR_EACH_IN_CONTAINER(iter, mpnodes)
+	FOR_EACH_IN_CONTAINER(iter, nodes)
+	{
+		int id = *iter;
+		pair<DAG, DAG> temp_subs_problems;
+		pair<int, int> scales =
+			analyze_subproblem_scales_Bound(
+					g, id, temp_subs_problems);
+		if (scales.first < scales.second)
+		{
+			swap(scales.first, scales.second);
+		}
+
+		if (comp_scale_pairs_sum(scales, min_scales))
+		{
+			min_scales = scales;
+			best_node = id;
+			best_sub_problems = temp_subs_problems;
+		}
+	}
+
+	return best_node;
+}
+
+int pivot_by_Bound_bidirectional(DAG *g, pair<DAG, DAG> &subprobs)
+{
+	int best_node = 0;
+	pair<DAG, DAG> best_sub_problems;
+
+	IdList nodes;
+	g->getVertexList(nodes);
+
+	pair<int, int> min_scales = make_pair(INT_MAX, INT_MAX);
+
+	FOR_EACH_IN_CONTAINER(iter, nodes)
+	{
+		int vid = *iter;
+		pair<DAG, DAG> temp_subs_problems;
+		pair<int, int> scales =
+			analyze_subproblem_scales_Bound_bidirectional(
+					g, vid, temp_subs_problems);
+		// put the larger scale at the front
+		if (scales.first < scales.second)
+		{
+			swap(scales.first, scales.second);
+		}
+
+		if (comp_scale_pairs_sum(scales, min_scales))
+		{
+			min_scales = scales;
+			best_node = vid;
+			best_sub_problems = temp_subs_problems;
+		}
+	}
+
+	return best_node;
+}
+
+int pivot_by_vertex_degree(DAG *g, std::pair<DAG, DAG> &best_sub_problems)
+{
+	int best_node = 0;
+
+	IdList nodes;
+	g->getVertexList(nodes);
+
+	int max_degree = 0;
+	FOR_EACH_IN_CONTAINER(iter, nodes)
+	{
+		int id = *iter;
+		int d = g->getDegree(id);
+		if (d > max_degree)
+		{
+			max_degree = d;
+			best_node = id;
+		}
+	}
+
+	get_subproblems_splitted_by_vertex(g, best_node, best_sub_problems);
+
+	return best_node;
+}
+
+int pivot_by_flow_bidirectional(DAG *g, pair<DAG, DAG> &subprobs)
+{
+	int best_node = 0;
+
+	DAG gflow(*g);
+	gflow.clearVertexPrivData();
+
+	perform_graph_flow(&gflow);
+	if (debug_flow)
+	{
+		printf("The flow in the graph:\n");
+		gflow.print(print_privdata_flow);
+	}
+
+	// check flow result
+	// the sum of all flow in roots or leaves should be equal to the number of nodes
+	Flow_t sum_up, sum_down;
+	IdList roots, leaves;
+	gflow.getRootList(roots);
+	gflow.getLeafList(leaves);
+
+	int n = gflow.getVertexNum();
+	FOR_EACH_IN_CONTAINER(iter, roots)
+	{
+		sum_up += get_up_flow(&gflow, *iter);
+	}
+	FOR_EACH_IN_CONTAINER(iter, leaves)
+	{
+		sum_down += get_down_flow(&gflow, *iter);
+	}
+	assert(sum_up == n);
+	assert(sum_down == n);
+
+	IdList nodes;
+	g->getVertexList(nodes);
+
+	Flow_t max_flow = 0;
+	FOR_EACH_IN_CONTAINER(iter, nodes)
+	{
+		int id = *iter;
+
+		Flow_t upflow = get_up_flow(&gflow, id);
+		Flow_t downflow = get_down_flow(&gflow, id);
+		Flow_t flow = max(upflow, downflow);
+		if (flow > max_flow)
+		{
+			best_node = id;
+			max_flow = flow;
+		}
+	}
+
+	get_subproblems_splitted_by_vertex(g, best_node, subprobs);
+	return best_node;
 }
 
 // g(u), calculate the number of consistent sub-DAGs in a DAG g
@@ -1996,9 +2235,15 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 	// profiling
 	func_calls[__FUNCTION__]++;
 
+	if (debugging)
+	{
+		printf("counting for:\n");
+		g->print(print_privdata);
+	}
+
 	string vs;
 	get_signature(g, vs);
-	if (using_hash)
+	if (using_hash && !verify_hash)
 	{
 		//printf("vertices: %s\n", vs.c_str());
 		//printf("Hash count: %d\n", hash_table.size());
@@ -2008,8 +2253,10 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 		{
 			hash_hits++;
 			//printf("Hash hit! (%d)\n", hash_hits);
-			//printf("Hashed count (%f)\n", pos->second);
-			//cout << "Hashed count " << pos->second << endl;
+			if (debugging)
+			{
+				cout << "Hashed count " << pos->second << endl;
+			}
 			return pos->second;
 		}
 	}
@@ -2030,9 +2277,6 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 	IdList mpnodes;
 	g->getMultiParentVertices(mpnodes);
 
-	IdList nodes;
-	g->getVertexList(nodes);
-
 	if (mpnodes.size() == 0)
 	{
 		total = count_consistent_subdag_tree(g);
@@ -2043,7 +2287,7 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 	//}
 	else
 	{
-		if (recursion_depth <= 20)
+		//if (recursion_depth <= 20)
 		{
 			for (int di = 1; di < recursion_depth; di++)
 			{
@@ -2053,58 +2297,136 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 					recursion_depth, mpnodes.size());
 		}
 
-		pair<int, int> min_scales = make_pair(INT_MAX, INT_MAX);
-		//int min_scales = INT_MAX;
-		int best_node = 0;
-		pair<DAG, DAG> best_subs_problems;
-		// find the best node to split count
-		//FOR_EACH_IN_CONTAINER(iter, mpnodes)
-		FOR_EACH_IN_CONTAINER(iter, nodes)
-		{
-			int vid = *iter;
-			pair<DAG, DAG> temp_subs_problems;
-			pair<int, int> scales =
-				analyze_subproblem_scales_Bound_double_direction(
-						g, vid, temp_subs_problems);
-			//if (scales.first < scales.second)
-			//{
-			//	swap(scales.first, scales.second);
-			//}
+		pair<DAG, DAG> best_sub_problems;
 
-			if (comp_scale_pairs_sum(scales, min_scales))
-			{
-				min_scales = scales;
-				best_node = vid;
-				best_subs_problems = temp_subs_problems;
-			}
-		}
-
-		//DAG mA(*g), mD(*g);
-		int id = best_node;
+		int id = pivot_by_flow_bidirectional(g, best_sub_problems);
+		//int id = pivot_by_vertex_degree(g, best_sub_problems);
+		//int id = pivot_by_Bound(g, best_sub_problems);
 
 		//printf("partitioning with MP node %d\n", id);
-		//DAG ancestors, descendents;
-		//get_path_to_root(g, id, ancestors);
+		//DAG ancestors, descendants;
+		//get_ancestors_subdag(g, id, ancestors);
 		//mA.removeSubdag(ancestors);
-		//get_descendents_subdag(g, id, descendents);
-		//mD.removeSubdag(descendents);
+		//get_descendants_subdag(g, id, descendants);
+		//mD.removeSubdag(descendants);
+
+		PrivDataUnion privdata = g->getPrivData(id);
+		number_t subdag_count = get_num_from_priv_data(privdata);
+		if (subdag_count == 0)
+		{
+			subdag_count = 2;
+		}
 
 		IdList roots1, roots2;
-		DAG &mA = best_subs_problems.first;
-		DAG &mD = best_subs_problems.second;
-		mA.getRootList(roots1);
-		mD.getRootList(roots2);
-		number_t num1 = count_consistent_subdag(&mA, roots1, using_hash);
-		number_t num2 = count_consistent_subdag(&mD, roots2, using_hash);
 
-		total = num1 + num2 + 1;
+		DAG &mA = best_sub_problems.first;
+		mA.getRootList(roots1);
+		number_t num1 = count_consistent_subdag(&mA, roots1, using_hash);
+		roots1.clear();
+
+		DAG rmA(mA);
+		rmA.reverse();
+		rmA.getRootList(roots1);
+		number_t num1_c = count_consistent_subdag(&rmA, roots1, using_hash);
+		if (num1 != num1_c)
+		{
+			cout << "found a BUG:" << endl;
+			cout << "This is the subdag:" << endl;
+			g->print(print_privdata_num);
+			cout << "pivoting node: " << id << endl;
+			cout << "g[-A]:" << endl;
+			mA.print(print_privdata_num);
+			cout << "g[-A].reversed:" << endl;
+			rmA.print(print_privdata_num);
+			cout << "count(g[-A]) = " << num1 << " but" << endl
+				<< "count(g[-A].reversed) = " << num1_c
+				<< endl;
+			
+			assert(0);
+			exit(2);
+		}
+
+		DAG &mD = best_sub_problems.second;
+		mD.getRootList(roots2);
+		number_t num2 = count_consistent_subdag(&mD, roots2, using_hash);
+		roots2.clear();
+
+		DAG rmD(mD);
+		rmD.reverse();
+		rmD.getRootList(roots2);
+		number_t num2_c = count_consistent_subdag(&rmD, roots2, using_hash);
+		if (num2 != num2_c)
+		{
+			cout << "found a BUG:" << endl;
+			cout << "This is the subdag:" << endl;
+			g->print(print_privdata_num);
+			cout << "pivoting node: " << id << endl;
+			cout << "g[-D]:" << endl;
+			mD.print(print_privdata_num);
+			cout << "g[-D].reversed:" << endl;
+			rmD.print(print_privdata_num);
+			cout << "count(g[-D]) = " << num2 << " but" << endl
+				<< "count(g[-D].reversed) = " << num2_c
+				<< endl;
+			
+			assert(0);
+			exit(2);
+		}
+
+		if (g->isRoot(id))
+		{
+			total = num2 * (subdag_count - 1) + num1;
+		}
+		else if (g->isLeaf(id))
+		{
+			total = num1 * (subdag_count - 1) + num2;
+		}
+		else
+		{
+			total = num1 + num2;
+		}
 	}
 
 	if (using_hash)
 	{
-		hash_table[vs] = total;
+		if (!verify_hash)
+		{
+			hash_table[vs] = total;
+		}
+		else
+		{
+			auto pos = hash_table.find(vs);
+			hash_tries++;
+			if (pos != hash_table.end())
+			{
+				// check with hashed count
+				hash_hits++;
+				if (debugging)
+				{
+					//printf("Hash hit! (%d)\n", hash_hits);
+				}
+				if (pos->second != total)
+				{
+					cout << "Error." << endl;
+					cout << "Hashed count " << pos->second
+						<< " compared to result count " << total << endl;
+					assert(0);
+				}
+			}
+			else
+			{
+				hash_table[vs] = total;
+			}
+		}
 		//printf("hash count: %d (%f)\n",
 		//		hash_table.size(), (number_t)hash_hits/hash_tries);
+	}
+
+	if (debugging)
+	{
+		cout << "the count for DAG:" << endl;
+		g->print(print_privdata);
+		cout << "is: " << total << endl;
 	}
 
 	recursion_depth--;
@@ -2203,7 +2525,7 @@ number_t count_consistent_subdag(DAG *g, int rootid, bool using_hash)
 		//subdag->printEdges();
 
 		// the subdag can have only one parent, that's how we decomposed
-		int srid = subdag->getRoot();
+		int srid = subdag->getFirstRoot();
 
 		//number_t num = count_consistent_subdag_for_independent_subdag(subdag);
 		number_t num = count_consistent_subdag(subdag, srid);
@@ -2220,7 +2542,7 @@ number_t count_consistent_subdag(DAG *g, int rootid, bool using_hash)
 		modified.addVertex(srid);
 		PrivDataUnion priv;
 		//priv.ddouble = num;
-		setNumToPrivData(priv, num);
+		set_num_to_priv_data(priv, num);
 		modified.setPrivData(srid, priv);
 
 		// we should check if there is a parent for this root of subdag
@@ -2288,8 +2610,11 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 	// profiling
 	func_calls[__FUNCTION__]++;
 
-	//printf("counting for:\n");
-	//g->print();
+	if (debugging)
+	{
+		printf("pruning and counting:\n");
+		g->print(print_privdata);
+	}
 
 	DAG modified(*g);
 //	modified.copyVertexPrivData(*g);
@@ -2307,7 +2632,7 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 	get_signature(&modified, vs);
 	//printf("vertices: %s\n", vs.c_str());
 	//printf("Hash count: %d\n", hash_table.size());
-	if (using_hash)
+	if (using_hash && !verify_hash)
 	{
 		//printf("vertices: %s\n", vs.c_str());
 		//printf("Hash count: %d\n", hash_table.size());
@@ -2317,8 +2642,10 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 		{
 			hash_hits++;
 			//printf("Hash hit! (%d)\n", hash_hits);
-			//printf("Hashed count (%f)\n", pos->second);
-			//cout << "Hashed count " << pos->second << endl;
+			if (debugging)
+			{
+				cout << "Hashed count " << pos->second << endl;
+			}
 			return pos->second;
 		}
 	}
@@ -2342,9 +2669,19 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 	// So we don't need to do anything
 	//decomp_subdags.reverse();
 
-	//printf("decomposed subdags.\n");
-	//modified.print();
-	//print_subdag_list(decomp_subdags);
+	if (debugging)
+	{
+		if (decomp_subdags.size() == 0)
+		{
+			printf("not decomposed.\n");
+		}
+		else
+		{
+			printf("decomposed subdags.\n");
+			modified.print();
+			print_subdag_list(decomp_subdags);
+		}
+	}
 
 	ParentMap &parent_map = get_parent_info(&modified).parentMap;
 
@@ -2365,19 +2702,23 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 		number_t num = count_consistent_subdag(subdag, subroots, using_hash);
 		//printf("count is %f\n", num);
 
+		// generate subkey
+		string subkey;
+		subdag->getVertexString(subkey);
+
 		// add to original dag
 
 		// we can use only one root to represent the subdag
 		// even when there are actually multipule roots in the subdag
 		int srid = subroots.front();
 
-		// just add the root node, so that when laterly calculate
-		// with count_consistent_subdag_for_independent_subdag
-		// function, the mpnodes from this subdag won't be considered.
-		modified.addVertex(srid);
+		// ****BUG****: didn't remove deprecated code, this operation is already done
+		// in later process
+		//modified.addVertex(srid);
+
 		PrivDataUnion priv;
 		//priv.ddouble = num;
-		setNumToPrivData(priv, num);
+		set_num_to_priv_data(priv, num);
 
 		// we should check if there is a parent for this root of subdag
 		if (subroots.size() == 1 && !g->isRoot(srid))
@@ -2388,37 +2729,53 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 			parent = parent_map[srid].front();
 			// find where the parent is
 			DAG *parent_subdag = find_subdag_has(parent, decomp_subdags);
+
+			// just add the root node, so that when laterly calculate
+			// with count_consistent_subdag_for_independent_subdag
+			// function, the mpnodes from this subdag won't be considered.
+
 			//if (modified.checkVertex(parent))
 			if (parent_subdag == NULL)
 			{// it is in the root subdag
+				assert(!modified.checkVertex(srid));
 				modified.addVertex(srid);
 				modified.addEdge(parent, srid);
 				modified.setPrivData(srid, priv);
+				modified.setSubkey(srid, subkey);
 			}
 			else
 			{// in some later subdag, which will be counted and added later
+				assert(!parent_subdag->checkVertex(srid));
 				parent_subdag->addVertex(srid);
 				parent_subdag->addEdge(parent, srid);
 				parent_subdag->setPrivData(srid, priv);
+				parent_subdag->setSubkey(srid, subkey);
 			}
 		}
 		else
 		{
 			// otherwise, add as an independent root
+			assert(!modified.checkVertex(srid));
 			modified.addVertex(srid);
 			modified.addToRootList(srid);
 			modified.setPrivData(srid, priv);
+			modified.setSubkey(srid, subkey);
 		}
 	}
 
-	//bool try_hash;
-	if (decomp_subdags.size() > 0)
+	if (debugging)
 	{
-		//printf("After regenerate.\n");
-		//modified.print(print_privdata);
-		// because we substituted a subdag to a vertex, now we can't only use the
-		// nodes of the regenerated dag as the hash key to store the count.
-		using_hash = false;
+		if (decomp_subdags.size() > 0)
+		{
+			printf("After regenerate.\n");
+			modified.print(print_privdata);
+			// because we substituted a subdag to a vertex, now we can't only use the
+			// nodes of the regenerated dag as the hash key to store the count.
+			//using_hash = false;
+			// Now this is solved by using the subkey in Vertex
+			// whenever we prune a subdag to a single node, we save the key of that
+			// subdag into the "subkey" member variable in the Vertex structure
+		}
 	}
 
 
@@ -2437,7 +2794,35 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 
 	if (using_hash)
 	{
-		hash_table[vs] = total;
+		if (!verify_hash)
+		{
+			hash_table[vs] = total;
+		}
+		else
+		{
+			auto pos = hash_table.find(vs);
+			hash_tries++;
+			if (pos != hash_table.end())
+			{
+				// check with hashed count
+				hash_hits++;
+				if (debugging)
+				{
+					//printf("Hash hit! (%d)\n", hash_hits);
+				}
+				if (pos->second != total)
+				{
+					cout << "Error." << endl;
+					cout << "Hashed count " << pos->second
+						<< " compared to result count " << total << endl;
+					assert(0);
+				}
+			}
+			else
+			{
+				hash_table[vs] = total;
+			}
+		}
 		//printf("hash count: %d (%f)\n",
 		//		hash_table.size(), (number_t)hash_hits/hash_tries);
 	}
@@ -2480,7 +2865,7 @@ int reduce_dag(DAG *g)
 	DAG pathdag;
 	FOR_EACH_IN_CONTAINER(nodeit, mpnodes)
 	{
-		get_path_to_root(&pathinfo_dag, *nodeit, pathdag);
+		get_ancestors_subdag(&pathinfo_dag, *nodeit, pathdag);
 	}
 
 	// remove this path, then what's left should be all trees

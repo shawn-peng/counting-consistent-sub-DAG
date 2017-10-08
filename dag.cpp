@@ -195,6 +195,27 @@ const PrivDataUnion &Vertex::getPrivData() const
 	return privdata;
 }
 
+void Vertex::setSubkey(const string &str)
+{
+	subkey = str;
+}
+
+const string &Vertex::getSubkey() const
+{
+	return subkey;
+}
+
+string &Vertex::getSubkey()
+{
+	return subkey;
+}
+
+void Vertex::clearSubkey()
+{
+	subkey = "";
+}
+
+
 DAG::DAG(const DAG &other)
 {
 	*this = other;
@@ -207,6 +228,7 @@ DAG &DAG::operator =(const DAG &other)
 	vertices = other.vertices;
 	// rootid = other.rootid;
 	roots = other.roots;
+	reversed = other.reversed;
 
 	this->rebuildIndex();
 	return *this;
@@ -228,6 +250,7 @@ int DAG::addVertex(int id)
 	VertexMapIter vi = vindex.find(id);
 	if (vi != vindex.end())
 	{
+		printf("BUG: adding duplicated vertex.\n");
 		return 0;
 	}
 
@@ -243,7 +266,8 @@ int DAG::addEdge(int vstart, int vend)
 
 	if (vsi == vindex.end() || vei == vindex.end())
 	{
-		return -1;
+		//return -1;
+		exit(-1);
 	}
 
 	vsi->second->addChild(vend);
@@ -256,7 +280,7 @@ int DAG::addDAGAsChildOf(int parent, const DAG &other)
 {
 	DAG tmpdag(other);
 
-	int otherroot = other.getRoot();
+	int otherroot = other.getFirstRoot();
 	transferSubdag(tmpdag, *this, otherroot);
 
 	int ret = addEdge(parent,otherroot);
@@ -274,7 +298,7 @@ int DAG::addDAGAsChildOf(const IdList &parents, const DAG &other)
 {
 	DAG tmpdag(other);
 
-	int otherroot = other.getRoot();
+	int otherroot = other.getFirstRoot();
 	transferSubdag(tmpdag, *this, otherroot);
 
 	int ret;
@@ -294,7 +318,7 @@ int DAG::addDAGAsChildOf(const IdList &parents, const DAG &other)
 
 int DAG::transplantAsChildOf(const IdList &parents, DAG &other)
 {
-	int otherroot = other.getRoot();
+	int otherroot = other.getFirstRoot();
 	transferSubdag(other, *this, otherroot);
 
 	int ret;
@@ -375,9 +399,23 @@ int DAG::getVertexList(IdList &list) const
 int DAG::getVertexString(string &str) const
 {
 	ostringstream oss;
+	if (!reversed)
+	{
+		oss << "U " << endl;
+	}
+	else
+	{
+		oss << "D " << endl;
+	}
 	FOR_EACH_IN_CONTAINER(iter, vindex)
 	{
-		oss << iter->first << ' ';
+		oss << iter->first;
+		auto str = iter->second->getSubkey();
+		if (str != "")
+		{
+			oss << '(' << str << ')';
+		}
+		oss << ' ';
 	}
 	str = string(move(oss.str()));
 	return 0;
@@ -416,9 +454,9 @@ int DAG::getChildList(int id, IdList &list) const
 //	return 0;
 //}
 
-int DAG::getParentNum(int id)
+int DAG::getParentNum(int id) const
 {
-	Vertex *v = findVertex(id);
+	const Vertex *v = findVertex(id);
 	if (v == NULL)
 	{
 		printf("Error in %s(): id:%07d not found.\n", __FUNCTION__, id);
@@ -439,14 +477,14 @@ int DAG::getParentList(int id, IdList &list) const
 }
 
 
-void DAG::setRoot(int id)
+void DAG::setSingleRoot(int id)
 {
 	roots.clear();
 	roots.push_back(id);
 	return;
 }
 
-int DAG::getRoot() const
+int DAG::getFirstRoot() const
 {
 	return roots.front();
 }
@@ -496,12 +534,6 @@ void DAG::getRootList(IdList &list) const
 	return;
 }
 
-bool DAG::isRoot(int id) const
-{
-	auto pos = find(roots.begin(), roots.end(), id);
-	return pos != roots.end();
-}
-
 int DAG::generateRoots()
 {
 	int cnt = 0;
@@ -517,6 +549,50 @@ int DAG::generateRoots()
 	return cnt;
 }
 
+bool DAG::isRoot(int id) const
+{
+	auto pos = find(roots.begin(), roots.end(), id);
+	return pos != roots.end();
+}
+
+bool DAG::isLeaf(int id) const
+{
+	return (getChildNum(id) == 0);
+}
+
+int DAG::getLeafNum() const
+{
+	IdList leaves;
+	getLeafList(leaves);
+	return leaves.size();
+}
+
+void DAG::getLeafList(IdList &list) const
+{
+	FOR_EACH_IN_CONTAINER(iter, vertices)
+	{
+		if (iter->getChildNum() == 0)
+		{
+			list.push_back(iter->getId());
+		}
+	}
+}
+
+bool DAG::isInternal(int id) const
+{
+	return (!isLeaf(id) && !isRoot(id));
+}
+
+int DAG::getDegree(int id) const
+{
+	Vertex *v = findVertex(id);
+	if (v == NULL)
+	{
+		printf("Error in %s(): id:%07d not found.\n", __FUNCTION__, id);
+		exit(-1);
+	}
+	return v->getChildNum() + v->getParentNum();
+}
 
 void DAG::setPrivData(const PrivDataUnion &data)
 {
@@ -588,6 +664,50 @@ void DAG::clearVertexPrivData()
 		int id = vit->getId();
 		vit->setPrivData(PrivDataUnion());
 	}
+}
+
+void DAG::setSubkey(int id, const string &subkey)
+{
+	Vertex *v = findVertex(id);
+	if (v == NULL)
+	{
+		printf("Error in %s(): id:%07d not found.\n", __FUNCTION__, id);
+		exit(1);
+	}
+	v->setSubkey(subkey);
+}
+
+const string &DAG::getSubkey(int id) const
+{
+	const Vertex *v = findVertex(id);
+	if (v == NULL)
+	{
+		printf("Error in %s(): id:%07d not found.\n", __FUNCTION__, id);
+		exit(1);
+	}
+	return v->getSubkey();
+}
+
+string &DAG::getSubkey(int id)
+{
+	Vertex *v = findVertex(id);
+	if (v == NULL)
+	{
+		printf("Error in %s(): id:%07d not found.\n", __FUNCTION__, id);
+		exit(1);
+	}
+	return v->getSubkey();
+}
+
+void DAG::clearSubkey(int id)
+{
+	Vertex *v = findVertex(id);
+	if (v == NULL)
+	{
+		printf("Error in %s(): id:%07d not found.\n", __FUNCTION__, id);
+		exit(1);
+	}
+	v->clearSubkey();
 }
 
 void DAG::printSubdag(const Vertex &v, int depth) const
@@ -776,6 +896,7 @@ void DAG::reverse()
 		iter->reverse();
 	}
 	generateRoots();
+	reversed = !reversed;
 }
 
 int DAG::removeVertex(int id)

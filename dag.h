@@ -12,15 +12,17 @@
 #include <string>
 #include <vector>
 #include <list>
+#include <set>
 #include <map>
 #include <memory>
 
-using namespace std;
+//using namespace std;
 
 namespace NS_DAG
 {
 
-typedef list<int> IdList;
+typedef std::list<int> IdList;
+typedef std::set<int> IdSet;
 
 enum DataTypeEnum
 {
@@ -58,7 +60,7 @@ struct PrivDataUnion
 	int &dint;
 	float &dfloat;
 	double &ddouble;
-	shared_ptr<void> dptr;
+	std::shared_ptr<void> dptr;
 
 	PrivDataUnion();
 	PrivDataUnion(const PrivDataUnion &);
@@ -70,6 +72,10 @@ class Vertex
 {
 private:
 	int id;
+	// used when decendants are pruned, saves all decendants' id's
+	// to consider convenience, the vertex itself also counted
+	// there may exist recursive subkey
+	std::string subkey;
 	IdList children;
 	IdList parents;
 	PrivDataUnion privdata;
@@ -94,23 +100,30 @@ public:
 	void setPrivData(const PrivDataUnion &data);
 	PrivDataUnion &getPrivData();
 	const PrivDataUnion &getPrivData() const;
+
+	void setSubkey(const std::string &key);
+	const std::string &getSubkey() const;
+	std::string &getSubkey();
+	void clearSubkey();
 };
 
-typedef list<Vertex> VertexList;
+typedef std::list<Vertex> VertexList;
 typedef VertexList::iterator VertexIter;
 
 class DAG
 {
 private:
 	VertexList vertices; //list of vertices
-	map<int, VertexIter> vindex; //index to find vertex with certain id in the list
-	typedef map<int, VertexIter> VertexMap;
+	std::map<int, VertexIter> vindex; //index to find vertex with certain id in the list
+	typedef std::map<int, VertexIter> VertexMap;
 	typedef VertexMap::iterator VertexMapIter;
 
 	// int rootid;
 	IdList roots;
 
 	PrivDataUnion privdata;
+
+	bool reversed;
 
 protected:
 	int rebuildIndex();
@@ -122,11 +135,12 @@ protected:
 
 
 public:
-	DAG() {};
+	DAG() : reversed(false) {};
 	DAG(const DAG &other);
-	int addVertex(int id);
 
+	int addVertex(int id);
 	int addEdge(int vstart, int vend);
+
 
 	void setPrivData(const PrivDataUnion &data);
 	PrivDataUnion &getPrivData();
@@ -138,37 +152,46 @@ public:
 	void copyVertexPrivData(const DAG &other);
 	void clearVertexPrivData();
 
+	void setSubkey(int id, const std::string &subkey);
+	const std::string &getSubkey(int id) const;
+	std::string &getSubkey(int id);
+	void clearSubkey(int id);
+
 	int addDAGAsChildOf(int parent, const DAG &other);
 	int addDAGAsChildOf(const IdList &parents, const DAG &other);
 	int transplantAsChildOf(const IdList &parents, DAG &other);
 
-	//NULL if not found
-	Vertex *findVertex(int id) const;
+	Vertex *findVertex(int id) const; //NULL if not found
 	bool checkVertex(int id) const;
 
 	int getVertexList(IdList &list) const;
-	int getVertexString(string &str) const;
-
-	int getChildNum(int id) const;
-	int getChildList(int id, IdList &list) const;
-
-	//int getAllParent(int id, IdList parents);
-	int getParentNum(int id);
-	int getParentList(int id, IdList &list) const;
+	int getVertexString(std::string &str) const;
 
 	int getMultiParentVertices(IdList &list) const;
 
-	void setRoot(int id);
-	int getRoot() const;
+	void setSingleRoot(int id);
+	int getFirstRoot() const;
 	void addToRootList(int id);
 	void removeFromRootList(int id);
-	void getRootList(IdList &list) const;
-	bool isRoot(int id) const;
 	int generateRoots();
 
 	int getVertexNum() const;
 	int getEdgeNum() const;
 	int getRootNum() const;
+	int getLeafNum() const;
+
+	int getChildNum(int id) const;
+	int getParentNum(int id) const;
+	int getDegree(int id) const;
+
+	bool isRoot(int id) const;
+	bool isLeaf(int id) const;
+	bool isInternal(int id) const;
+
+	void getRootList(IdList &list) const;
+	void getLeafList(IdList &list) const;
+	int getParentList(int id, IdList &list) const;
+	int getChildList(int id, IdList &list) const;
 
 	void print() const;
 	void print(const IdList &ids) const;
