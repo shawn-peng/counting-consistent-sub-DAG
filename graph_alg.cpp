@@ -13,6 +13,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdint.h>
+#include <limits.h>
 
 #include <iostream>
 #include <algorithm>
@@ -23,7 +24,6 @@
 #include <unordered_set>
 #include <sstream>
 #include <memory>
-#include <limits.h>
 
 #include <gmpxx.h>
 

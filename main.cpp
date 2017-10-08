@@ -12,8 +12,10 @@
 #include <string.h>
 
 #include <iostream>
+#include <chrono>
 
 using namespace std;
+using namespace std::chrono;
 using namespace NS_DAG;
 
 int main(int argc, char *argv[])
@@ -83,6 +85,8 @@ int main(int argc, char *argv[])
 	//g->printEdges();
 
 	//return 0;
+	
+	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 
 	number_t num;
 	//num = count_consistent_subdag_for_independent_subdag(g);
@@ -90,6 +94,10 @@ int main(int argc, char *argv[])
 	//printf("====================================================");
 	//printf("====================================================\n");
 	num = count_consistent_subdag(g, rootlist);
+
+	high_resolution_clock::time_point t2 = high_resolution_clock::now();
+
+
 	//printf("Num of consistent sub-DAG: %.0f\n", num);
 	cout << "Num of consistent sub-DAG: " << num << endl;
 
@@ -98,6 +106,9 @@ int main(int argc, char *argv[])
 
 	graph_alg_print_stats();
 	graph_alg_clear_hash();
+
+	auto duration = duration_cast<microseconds>(t2 - t1).count();
+	cout << duration;
 
 	free_dag(g);
 	return 0;
