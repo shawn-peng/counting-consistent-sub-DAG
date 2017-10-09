@@ -41,11 +41,11 @@ static const bool verify_alg = false;
 
 static const bool debug_flow = false;
 
-static const bool g_using_hash = false;
+static bool g_using_hash = false;
 
-static const bool using_pruning = false;
+static bool using_pruning = false;
 
-static const string pivot_method = "flow";
+static string pivot_method = "random";
 
 typedef mpz_class number_t;
 //typedef double number_t;
@@ -2166,7 +2166,7 @@ int pivot_by_random(DAG *g, pair<DAG, DAG> &subprobs)
 {
 	int n = g->getVertexNum();
 	int ind = (double)(rand()) / RAND_MAX * n;
-	printf("debug: random pivoting %d / %d.\n", ind, n);
+	//printf("debug: random pivoting %d / %d.\n", ind, n);
 	int best_node = 0;
 
 	IdList nodes;
