@@ -170,8 +170,9 @@ int main(int argc, char *argv[])
 	auto duration = duration_cast<microseconds>(t2 - t1);
 	//auto clean_duration = break_down_durations<chrono::minutes, chrono::seconds>(duration);
 	//std::cout << std::get<0>(clean_duration).count() << "mins" << std::get<1>(clean_duration).count() << "secs" << endl;
-	auto clean_duration = break_down_durations<chrono::seconds>(duration);
-	std::cout << "time: " << std::get<0>(clean_duration).count() << "secs" << endl;
+	auto clean_duration = break_down_durations<chrono::milliseconds>(duration);
+	//std::cout << "time: " << std::get<0>(clean_duration).count() << "secs" << endl;
+	std::cout << "time: " << std::get<0>(clean_duration).count() << "ms" << endl;
 	//cout << format_durations(clean_duration);
 
 	free_dag(g);
