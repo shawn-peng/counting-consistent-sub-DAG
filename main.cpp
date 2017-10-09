@@ -80,9 +80,24 @@ int main(int argc, char *argv[])
 	{
 		datafile = argv[1];
 	}
-	if (argc >= 3)
+	string optstr;
+	for (int i = 2; i < argc; i++)
 	{
-		sscanf(argv[2], "%d", &rootid);
+		optstr = argv[i];
+		if (optstr == "--prune")
+		{
+			graph_alg_enable_pruning();
+		}
+		else if (optstr == "--hash")
+		{
+			graph_alg_enable_hashing();
+		}
+		else if (optstr == "--pivot")
+		{
+			i++;
+			optstr = argv[i];
+			graph_alg_set_pivoting_method(optstr);
+		}
 	}
 	DAG *g = create_dag_from_file(datafile);
 	g->generateRoots();

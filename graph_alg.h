@@ -30,7 +30,18 @@ void free_dag(NS_DAG::DAG *g);
 //print statistics
 void graph_alg_print_stats();
 
-//clear static info (NEED to count for different dags in one process)
+//clear static info (NEEDED to count for different dags in one process)
 void graph_alg_clear_hash();
+
+void graph_alg_enable_hashing();
+void graph_alg_disable_hashing();
+
+void graph_alg_enable_logging();
+void graph_alg_disable_logging();
+
+void graph_alg_enable_pruning();
+void graph_alg_disable_pruning();
+
+void graph_alg_set_pivoting_method(const std::string &methodname);
 
 #endif /* __GRAPH_ALG_H_ */
