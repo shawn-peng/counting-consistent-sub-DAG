@@ -12,9 +12,60 @@
 #include <string.h>
 
 #include <iostream>
+#include <sstream>
+#include <iomanip>
+#include <chrono>
+#include <ratio>
+#include <tuple>
 
 using namespace std;
+using namespace std::chrono;
 using namespace NS_DAG;
+
+template<class DurationIn>
+tuple<> break_down_durations(DurationIn d) {
+	return tuple<>();
+}
+
+template<class DurationOut, class... Durations, class DurationIn>
+tuple<DurationOut, Durations ...> break_down_durations(DurationIn d) {
+	tuple<DurationOut, Durations ...> retval;
+	auto x = std::chrono::duration_cast<DurationOut>(d);
+	d -= std::chrono::duration_cast<DurationIn>(x);
+	return tuple_cat(make_tuple(x), break_down_durations<Durations ...>(d));
+}
+
+/*template<class... Durations>
+tuple<decltype(Durations::period) ...> get_ratios()
+{
+	//return tuple<Durations::ratio;
+	return tuple<decltype(Durations::period) ...>();
+}
+
+template<class Ratio>
+int log_10_round_up(Ratio r)
+{
+	return 2;
+}
+
+template<class... Durations>
+std::string format_durations( std::tuple<Durations...> d ) {
+	std::size_t values[]={(std::size_t)std::get<Durations>(d).count()...};
+	auto ratios = get_ratios<Durations ...>();
+
+	std::stringstream ss;
+	ss << std::setfill('0');
+	ss << values[0];
+
+	for (std::size_t const& v:values) {
+		std::size_t i = &v-values;
+		if (i==0) continue;
+		ss << "::" << std::setw( log_10_round_up(ratios[i-1]) ) << values[i];
+	}
+	return ss.str();
+}*/
+
+
 
 int main(int argc, char *argv[])
 {
@@ -83,6 +134,8 @@ int main(int argc, char *argv[])
 	//g->printEdges();
 
 	//return 0;
+	
+	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 
 	number_t num;
 	//num = count_consistent_subdag_for_independent_subdag(g);
@@ -90,6 +143,10 @@ int main(int argc, char *argv[])
 	//printf("====================================================");
 	//printf("====================================================\n");
 	num = count_consistent_subdag(g, rootlist);
+
+	high_resolution_clock::time_point t2 = high_resolution_clock::now();
+
+
 	//printf("Num of consistent sub-DAG: %.0f\n", num);
 	cout << "Num of consistent sub-DAG: " << num << endl;
 
@@ -98,6 +155,13 @@ int main(int argc, char *argv[])
 
 	graph_alg_print_stats();
 	graph_alg_clear_hash();
+
+	auto duration = duration_cast<microseconds>(t2 - t1);
+	//auto clean_duration = break_down_durations<chrono::minutes, chrono::seconds>(duration);
+	//std::cout << std::get<0>(clean_duration).count() << "mins" << std::get<1>(clean_duration).count() << "secs" << endl;
+	auto clean_duration = break_down_durations<chrono::seconds>(duration);
+	std::cout << "time: " << std::get<0>(clean_duration).count() << "secs" << endl;
+	//cout << format_durations(clean_duration);
 
 	free_dag(g);
 	return 0;
