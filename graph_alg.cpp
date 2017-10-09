@@ -31,7 +31,7 @@
 using namespace std;
 using namespace NS_DAG;
 
-static bool print_log = true;
+static bool print_log = false;
 
 static bool debugging = false;
 
