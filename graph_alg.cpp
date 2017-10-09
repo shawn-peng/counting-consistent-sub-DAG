@@ -31,6 +31,8 @@
 using namespace std;
 using namespace NS_DAG;
 
+static const bool print_log = false;
+
 static const bool debugging = false;
 
 static const bool verify_hash = false;
@@ -1895,13 +1897,16 @@ number_t count_consistent_subdag_for_independent_subdag_nonrecursive(DAG *g, boo
 
 		extend_subdags.pop_front();
 
-		//if (recursion_depth <= 20)
+		if (print_log)
 		{
-			for (int di = 1; di < recursion_depth; di++)
+			//if (recursion_depth <= 20)
 			{
-				printf("  ");
+				for (int di = 1; di < recursion_depth; di++)
+				{
+					printf("  ");
+				}
+				printf("[%d] %d MP nodes left.\n", recursion_depth, extend_subdags.size());
 			}
-			printf("[%d] %d MP nodes left.\n", recursion_depth, extend_subdags.size());
 		}
 	}
 
@@ -2319,14 +2324,17 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 	//}
 	else
 	{
-		//if (recursion_depth <= 20)
+		if (print_log)
 		{
-			for (int di = 1; di < recursion_depth; di++)
+			//if (recursion_depth <= 20)
 			{
-				printf("  ");
+				for (int di = 1; di < recursion_depth; di++)
+				{
+					printf("  ");
+				}
+				printf("[%d] %d MP nodes left.\n",
+						recursion_depth, mpnodes.size());
 			}
-			printf("[%d] %d MP nodes left.\n",
-					recursion_depth, mpnodes.size());
 		}
 
 		pair<DAG, DAG> best_sub_problems;
