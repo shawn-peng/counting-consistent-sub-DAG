@@ -22,6 +22,8 @@ using namespace std;
 using namespace std::chrono;
 using namespace NS_DAG;
 
+static const bool print_log = false;
+
 static const bool verify_count = false;
 
 template<class DurationIn>
@@ -89,7 +91,11 @@ int main(int argc, char *argv[])
 	//g->setSingleRoot(rootid);
 	int ret;
 
-	g->print();
+	if (print_log)
+	{
+		g->print();
+	}
+
 	printf("Vertices: %d\n", g->getVertexNum());
 	//g->print(988);
 	list<DAG> subdags;
