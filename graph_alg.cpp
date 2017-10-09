@@ -31,15 +31,15 @@
 using namespace std;
 using namespace NS_DAG;
 
-static const bool print_log = false;
+static bool print_log = true;
 
-static const bool debugging = false;
+static bool debugging = false;
 
-static const bool verify_hash = false;
+static bool verify_hash = false;
 
-static const bool verify_alg = false;
+static bool verify_alg = false;
 
-static const bool debug_flow = false;
+static bool debug_flow = false;
 
 static bool g_using_hash = false;
 
@@ -106,6 +106,51 @@ struct Flows
 	Flows() : down_flow(0.0), up_flow(0.0),
 		each_down_flow(0.0), each_up_flow(0.0){}
 };
+
+
+void graph_alg_enable_hashing()
+{
+	g_using_hash = true;
+}
+void graph_alg_disable_hashing()
+{
+	g_using_hash = false;
+}
+
+void graph_alg_enable_logging()
+{
+	print_log = true;
+}
+void graph_alg_disable_logging()
+{
+	print_log = false;
+}
+
+void graph_alg_enable_pruning()
+{
+	using_pruning = true;
+}
+void graph_alg_disable_pruning()
+{
+	using_pruning = false;
+}
+
+static unordered_map<string, int> pivot_methods =
+{
+	{"random",0},
+	{"bound",0},
+	{"degree",0},
+	{"flow",0},
+};
+void graph_alg_set_pivoting_method(const std::string &methodname)
+{
+	if (pivot_methods.find(methodname) == pivot_methods.end())
+	{
+		printf("Invalid pivoting method.\n");
+		exit(-1);
+	}
+	pivot_method = methodname;
+}
 
 
 static unordered_map<string, number_t> hash_table;
