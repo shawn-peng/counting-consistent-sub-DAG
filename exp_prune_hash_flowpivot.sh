@@ -5,6 +5,8 @@
 
 result_file="experiments/methods/prune_hash_flowpivot.csv"
 detail_log_dir="experiments/methods/prune_hash_flowpivot_details/"
+
+alg_parameters="--prune --hash --pivot flow"
 	
 mkdir -p $detail_log_dir
 
@@ -16,7 +18,7 @@ for g in `ls $datadir`; do
 	#fname=`echo $g | grep -oP "[^/]*$"`
 	#echo $fname
 
-	./graph_alg ${datadir}${g} --prune --hash --pivot flow > ${detail_log_dir}${g}
+	./graph_alg ${datadir}${g} ${alg_parameters} > ${detail_log_dir}${g}
 
 	t=`cat ${detail_log_dir}${g} | sed -ne 's/time: \([0-9]*\)ms/\1/p'`
 	
