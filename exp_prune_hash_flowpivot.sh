@@ -3,8 +3,8 @@
 #datadir="data/simulated_dags/150_5/"
 . exp_conf
 
-result_file="experiments/methods/baseline.csv"
-detail_log_dir="experiments/methods/baseline_details/"
+result_file="experiments/methods/prune_hash_flowpivot.csv"
+detail_log_dir="experiments/methods/prune_hash_flowpivot_details/"
 	
 mkdir -p $detail_log_dir
 
