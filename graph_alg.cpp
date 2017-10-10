@@ -2627,7 +2627,8 @@ int prune_independent_subdags(DAG *g, bool using_hash)
 		set_num_to_priv_data(priv, num);
 
 		// we should check if there is a parent for this root of subdag
-		if (subroots.size() == 1 && !g->isRoot(srid))
+		//if (subroots.size() == 1 && !g->isRoot(srid))
+		if (subroots.size() == 1 && parent_map.find(srid) != parent_map.end())
 		{
 			// if there is any parent, there should be only one
 			// because that's the way we define independent subdag
@@ -2714,7 +2715,7 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 	DAG modified;
 
 	string vs;
-	get_signature(&modified, vs);
+	get_signature(g, vs);
 	//printf("vertices: %s\n", vs.c_str());
 	//printf("Hash count: %d\n", hash_table.size());
 	if (g_using_hash && !verify_hash)

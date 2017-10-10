@@ -267,6 +267,7 @@ int DAG::addEdge(int vstart, int vend)
 	if (vsi == vindex.end() || vei == vindex.end())
 	{
 		//return -1;
+		assert(0);
 		exit(-1);
 	}
 
