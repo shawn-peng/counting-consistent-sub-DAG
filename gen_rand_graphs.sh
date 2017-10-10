@@ -1,8 +1,8 @@
 #!/bin/bash
 
-NODE_NUM=25
+NODE_NUM=100
 
-NUM=5000
+NUM=1000
 
 for i in $(seq 1 $NUM);
 do
