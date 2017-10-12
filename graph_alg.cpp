@@ -2187,6 +2187,8 @@ int pivot_by_Bound_bidirectional(DAG *g, pair<DAG, DAG> &subprobs)
 		}
 	}
 
+	subprobs = best_sub_problems;
+
 	return best_node;
 }
 
