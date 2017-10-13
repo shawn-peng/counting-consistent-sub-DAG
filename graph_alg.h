@@ -25,6 +25,8 @@ int get_consistent_subdag(NS_DAG::DAG *g, int rootid, std::list<NS_DAG::DAG> &su
 number_t count_consistent_subdag(NS_DAG::DAG *g, int rootid, bool using_hash = true);
 number_t count_consistent_subdag(NS_DAG::DAG *g, const NS_DAG::IdList &rootlist, bool using_hash = true);
 
+number_t estimate_upper_bound(NS_DAG::DAG *g, int method);
+
 void free_dag(NS_DAG::DAG *g);
 
 //print statistics
