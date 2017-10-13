@@ -2187,6 +2187,8 @@ int pivot_by_Bound_bidirectional(DAG *g, pair<DAG, DAG> &subprobs)
 		}
 	}
 
+	subprobs = best_sub_problems;
+
 	return best_node;
 }
 
@@ -2923,4 +2925,72 @@ void graph_alg_clear_hash()
 
 	func_calls.clear();
 }
+
+number_t estimate_upper_bound(DAG *g, int method)
+{
+	DAG modified(*g);
+
+	// generate depth map (max depth)
+	unordered_map<int, int> depthmap;
+	IdList nodes;
+	get_topological_order(&modified, nodes);
+	FOR_EACH_IN_CONTAINER(iter, nodes)
+	{
+		int id = *iter;
+		int depth = 1;
+		IdList parents;
+		modified.getParentList(id, parents);
+		// find deepest parent
+		FOR_EACH_IN_CONTAINER(pit, parents)
+		{
+			int d = depthmap[*pit] + 1;
+			if (d > depth)
+			{
+				depth = d;
+			}
+		}
+		depthmap[id] = depth;
+	}
+
+	// remove edges to become tree
+	IdList mpnodes;
+	modified.getMultiParentVertices(mpnodes);
+	FOR_EACH_IN_CONTAINER(iter, mpnodes)
+	{
+		int id = *iter;
+		IdList parents;
+		modified.getParentList(id, parents);
+		if (method == 1)
+		{
+			parents.pop_back();
+		}
+		else if (method == 2)
+		{
+			// find deepest parent, and don't remove the edge from it
+			FOR_EACH_IN_CONTAINER(pit, parents)
+			{
+				if (depthmap[id] == depthmap[*pit] + 1)
+				{
+					parents.erase(pit);
+					// this will keep the edge from removing
+					break;
+				}
+			}
+		}
+		FOR_EACH_IN_CONTAINER(pit, parents)
+		{
+			modified.removeEdge(*pit, id);
+		}
+	}
+
+	IdList roots;
+	modified.getRootList(roots);
+	return count_consistent_subdag(&modified, roots);
+}
+
+
+
+
+
+
 
