@@ -8,5 +8,5 @@ f=$1
 
 cnt=`tail -n20 ${f} | sed -ne 's/Num of consistent sub-DAG: \([0-9]*\)/\1/p'`
 
-echo cnt
+echo $cnt
 
