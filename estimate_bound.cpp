@@ -102,14 +102,14 @@ int main(int argc, char *argv[])
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 
 	number_t num = estimate_upper_bound(g, 1);
-	number_t num2 = estimate_upper_bound(g, 2);
+	//number_t num2 = estimate_upper_bound(g, 2);
 
 	high_resolution_clock::time_point t2 = high_resolution_clock::now();
 
 
 	//printf("Num of consistent sub-DAG: %.0f\n", num);
 	cout << "(Estimated)Num of consistent sub-DAG: " << num << endl;
-	cout << "(Estimated)Num of consistent sub-DAG: " << num2 << endl;
+	//cout << "(Estimated)Num of consistent sub-DAG: " << num2 << endl;
 
 	graph_alg_clear_hash();
 
@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
 	//std::cout << std::get<0>(clean_duration).count() << "mins" << std::get<1>(clean_duration).count() << "secs" << endl;
 	auto clean_duration = break_down_durations<chrono::milliseconds>(duration);
 	//std::cout << "time: " << std::get<0>(clean_duration).count() << "secs" << endl;
-	std::cout << "time: " << std::get<0>(clean_duration).count() << "ms" << endl;
+	//std::cout << "time: " << std::get<0>(clean_duration).count() << "ms" << endl;
 	//cout << format_durations(clean_duration);
 
 	free_dag(g);
