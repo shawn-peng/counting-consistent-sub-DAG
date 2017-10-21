@@ -22,9 +22,11 @@ using namespace std;
 using namespace std::chrono;
 using namespace NS_DAG;
 
-static const bool print_log = false;
+static bool print_log = false;
 
-static const bool verify_count = false;
+static bool verify_count = false;
+
+static bool reverse_count = false;
 
 template<class DurationIn>
 tuple<> break_down_durations(DurationIn d) {
@@ -102,10 +104,19 @@ int main(int argc, char *argv[])
 		{
 			graph_alg_enable_logging();
 		}
+		else if (optstr == "--reverse")
+		{
+			reverse_count = true;
+		}
 	}
 	DAG *g = create_dag_from_file(datafile);
 	g->generateRoots();
 	g->getRootList(rootlist);
+
+	if (reverse_count)
+	{
+		g->reverse();
+	}
 
 	//g->setSingleRoot(rootid);
 	int ret;
