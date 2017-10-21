@@ -44,6 +44,9 @@ void graph_alg_disable_logging();
 void graph_alg_enable_pruning();
 void graph_alg_disable_pruning();
 
+void graph_alg_enable_reverse();
+void graph_alg_disable_reverse();
+
 void graph_alg_set_pivoting_method(const std::string &methodname);
 
 #endif /* __GRAPH_ALG_H_ */
