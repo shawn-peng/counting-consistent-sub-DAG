@@ -387,6 +387,41 @@ int DAG::getMultiParentVertices(IdList &list) const
 	}
 	return 0;
 }
+int DAG::getMultiChildVertices(IdList &list) const
+{
+	FOR_EACH_IN_CONTAINER(iter, vertices)
+	{
+		if (iter->getChildNum() > 1)
+		{
+			list.push_back(iter->getId());
+		}
+	}
+	return 0;
+}
+int DAG::getMPNodeNum() const
+{
+	int num;
+	FOR_EACH_IN_CONTAINER(iter, vertices)
+	{
+		if (iter->getParentNum() > 1)
+		{
+			num++;
+		}
+	}
+	return num;
+}
+int DAG::getMCNodeNum() const
+{
+	int num;
+	FOR_EACH_IN_CONTAINER(iter, vertices)
+	{
+		if (iter->getChildNum() > 1)
+		{
+			num++;
+		}
+	}
+	return num;
+}
 
 int DAG::getVertexList(IdList &list) const
 {
