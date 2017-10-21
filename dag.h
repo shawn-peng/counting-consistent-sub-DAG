@@ -206,6 +206,9 @@ public:
 	// reverse all directions
 	void reverse();
 
+	// get reverse status
+	bool isReversed() const;
+
 	//int merge(const DAG &other, DAG &dest); //
 
 	int removeVertex(int id);

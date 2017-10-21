@@ -47,6 +47,8 @@ static bool using_pruning = false;
 
 static string pivot_method = "random";
 
+static bool allow_reverse = false;
+
 typedef mpz_class number_t;
 //typedef double number_t;
 
@@ -133,6 +135,15 @@ void graph_alg_enable_pruning()
 void graph_alg_disable_pruning()
 {
 	using_pruning = false;
+}
+
+void graph_alg_enable_reverse()
+{
+	allow_reverse = true;
+}
+void graph_alg_disable_reverse()
+{
+	allow_reverse = false;
 }
 
 static unordered_map<string, int> pivot_methods =
@@ -676,6 +687,18 @@ int get_signature(DAG *g, string &str)
 	//}
 	//str = string(move(oss.str()));
 	g->getVertexString(str);
+	if (verify_alg)
+	{
+		if (g->isReversed())
+		{
+			str = "D " + str;
+		}
+		else
+		{
+			str = "U " + str;
+		}
+	}
+
 	return 0;
 }
 
@@ -1835,6 +1858,7 @@ number_t count_consistent_subdag_for_independent_subdag_nonrecursive(DAG *g, boo
 
 	string vs;
 	get_signature(g, vs);
+	// if we are verifying hash, we need to do the count
 	if (g_using_hash && !verify_hash)
 	{
 		//printf("vertices: %s\n", vs.c_str());
