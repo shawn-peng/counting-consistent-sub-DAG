@@ -19,5 +19,5 @@ average out-degree : 1.6800
 # of vertices having out-degree=4 : 2
 # of vertices having out-degree=8 : 1
 
-Number of recursive calls: 99
+Number of recursive calls: 64
 Total count: 8763
