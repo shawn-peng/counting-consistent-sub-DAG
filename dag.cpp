@@ -400,7 +400,7 @@ int DAG::getMultiChildVertices(IdList &list) const
 }
 int DAG::getMPNodeNum() const
 {
-	int num;
+	int num = 0;
 	FOR_EACH_IN_CONTAINER(iter, vertices)
 	{
 		if (iter->getParentNum() > 1)
@@ -412,7 +412,7 @@ int DAG::getMPNodeNum() const
 }
 int DAG::getMCNodeNum() const
 {
-	int num;
+	int num = 0;
 	FOR_EACH_IN_CONTAINER(iter, vertices)
 	{
 		if (iter->getChildNum() > 1)
