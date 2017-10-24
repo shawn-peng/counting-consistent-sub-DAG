@@ -28,6 +28,8 @@ static bool verify_count = false;
 
 static bool reverse_count = false;
 
+static bool brute_force = false;
+
 template<class DurationIn>
 tuple<> break_down_durations(DurationIn d) {
 	return tuple<>();
@@ -108,6 +110,10 @@ int main(int argc, char *argv[])
 		{
 			reverse_count = true;
 		}
+		else if (optstr == "--brute-force")
+		{
+			brute_force = true;
+		}
 	}
 	DAG *g = create_dag_from_file(datafile);
 	g->generateRoots();
@@ -183,7 +189,16 @@ int main(int argc, char *argv[])
 	//printf("Num of consistent sub-DAG: %.0f\n", num);
 	//printf("====================================================");
 	//printf("====================================================\n");
-	num = count_consistent_subdag(g, rootlist);
+	if (brute_force)
+	{
+		rootid = rootlist.front();
+		ret = get_consistent_subdag(g, rootid, subdags);
+		num = subdags.size() + 1;
+	}
+	else
+	{
+		num = count_consistent_subdag(g, rootlist);
+	}
 
 	high_resolution_clock::time_point t2 = high_resolution_clock::now();
 
