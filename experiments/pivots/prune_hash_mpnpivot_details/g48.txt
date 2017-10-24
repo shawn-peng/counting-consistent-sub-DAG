@@ -1,0 +1,69 @@
+Vertices: 100
+[1] 13 MP nodes left.
+  [2] 7 MP nodes left.
+    [3] 3 MP nodes left.
+      [4] 2 MP nodes left.
+        [5] 1 MP nodes left.
+        [5] 1 MP nodes left.
+      [4] 2 MP nodes left.
+        [5] 1 MP nodes left.
+    [3] 1 MP nodes left.
+    [3] 6 MP nodes left.
+      [4] 2 MP nodes left.
+        [5] 1 MP nodes left.
+      [4] 4 MP nodes left.
+        [5] 2 MP nodes left.
+          [6] 1 MP nodes left.
+  [2] 1 MP nodes left.
+  [2] 12 MP nodes left.
+    [3] 4 MP nodes left.
+      [4] 1 MP nodes left.
+      [4] 1 MP nodes left.
+      [4] 3 MP nodes left.
+        [5] 2 MP nodes left.
+          [6] 1 MP nodes left.
+    [3] 11 MP nodes left.
+      [4] 5 MP nodes left.
+        [5] 1 MP nodes left.
+        [5] 4 MP nodes left.
+          [6] 1 MP nodes left.
+          [6] 2 MP nodes left.
+            [7] 1 MP nodes left.
+          [6] 1 MP nodes left.
+      [4] 9 MP nodes left.
+        [5] 3 MP nodes left.
+          [6] 1 MP nodes left.
+          [6] 2 MP nodes left.
+            [7] 1 MP nodes left.
+            [7] 1 MP nodes left.
+        [5] 8 MP nodes left.
+          [6] 3 MP nodes left.
+            [7] 2 MP nodes left.
+              [8] 1 MP nodes left.
+              [8] 1 MP nodes left.
+          [6] 7 MP nodes left.
+            [7] 3 MP nodes left.
+              [8] 2 MP nodes left.
+                [9] 1 MP nodes left.
+              [8] 2 MP nodes left.
+                [9] 1 MP nodes left.
+                [9] 1 MP nodes left.
+            [7] 6 MP nodes left.
+              [8] 5 MP nodes left.
+                [9] 2 MP nodes left.
+                  [10] 1 MP nodes left.
+                [9] 4 MP nodes left.
+                  [10] 3 MP nodes left.
+                    [11] 1 MP nodes left.
+                    [11] 2 MP nodes left.
+Num of consistent sub-DAG: 12320673481237592296
+(Sanity check)Num of consistent sub-DAG: 0
+Hash tries: 326
+Hash hits: 16
+Hit rates: 0.049080
+Hash count: 196
+Function count_consistent_subdag has been called 171 times.
+Function count_consistent_subdag_for_independent_subdag has been called 155 times.
+Function decompose_dag has been called 155 times.
+Function find_roots_consistent_to_vertices has been called 560 times.
+time: 142ms
