@@ -1,6 +1,7 @@
 #!/bin/bash
 
-n=$1
+#n=$1
+read n
 
 len=`echo -n $n | wc -m`
 
