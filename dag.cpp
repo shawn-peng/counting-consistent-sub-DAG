@@ -400,14 +400,6 @@ int DAG::getVertexList(IdList &list) const
 int DAG::getVertexString(string &str) const
 {
 	ostringstream oss;
-	if (!reversed)
-	{
-		oss << "U " << endl;
-	}
-	else
-	{
-		oss << "D " << endl;
-	}
 	FOR_EACH_IN_CONTAINER(iter, vindex)
 	{
 		oss << iter->first;
@@ -898,6 +890,11 @@ void DAG::reverse()
 	}
 	generateRoots();
 	reversed = !reversed;
+}
+
+bool DAG::isReversed() const
+{
+	return reversed;
 }
 
 int DAG::removeVertex(int id)

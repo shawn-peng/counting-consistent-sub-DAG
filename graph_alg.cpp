@@ -45,7 +45,9 @@ static bool g_using_hash = false;
 
 static bool using_pruning = false;
 
-static string pivot_method = "random";
+static string pivot_method = "random_mpn";
+
+static bool allow_reverse = false;
 
 typedef mpz_class number_t;
 //typedef double number_t;
@@ -135,23 +137,14 @@ void graph_alg_disable_pruning()
 	using_pruning = false;
 }
 
-static unordered_map<string, int> pivot_methods =
+void graph_alg_enable_reverse()
 {
-	{"random",0},
-	{"bound",0},
-	{"degree",0},
-	{"flow",0},
-};
-void graph_alg_set_pivoting_method(const std::string &methodname)
-{
-	if (pivot_methods.find(methodname) == pivot_methods.end())
-	{
-		printf("Invalid pivoting method.\n");
-		exit(-1);
-	}
-	pivot_method = methodname;
+	allow_reverse = true;
 }
-
+void graph_alg_disable_reverse()
+{
+	allow_reverse = false;
+}
 
 static unordered_map<string, number_t> hash_table;
 static int hash_tries = 0;
@@ -676,6 +669,18 @@ int get_signature(DAG *g, string &str)
 	//}
 	//str = string(move(oss.str()));
 	g->getVertexString(str);
+	if (verify_alg)
+	{
+		if (g->isReversed())
+		{
+			str = "D " + str;
+		}
+		else
+		{
+			str = "U " + str;
+		}
+	}
+
 	return 0;
 }
 
@@ -1835,6 +1840,7 @@ number_t count_consistent_subdag_for_independent_subdag_nonrecursive(DAG *g, boo
 
 	string vs;
 	get_signature(g, vs);
+	// if we are verifying hash, we need to do the count
 	if (g_using_hash && !verify_hash)
 	{
 		//printf("vertices: %s\n", vs.c_str());
@@ -2231,6 +2237,30 @@ int pivot_by_random(DAG *g, pair<DAG, DAG> &subprobs)
 	return best_node;
 }
 
+int pivot_by_random_mpn(DAG *g, pair<DAG, DAG> &subprobs)
+{
+	IdList mpnodes;
+	g->getMultiParentVertices(mpnodes);
+
+	int n = mpnodes.size();
+	int ind = (double)(rand()) / RAND_MAX * n;
+	//printf("debug: random pivoting %d / %d.\n", ind, n);
+	int best_node = 0;
+
+	FOR_EACH_IN_CONTAINER(iter, mpnodes)
+	{
+		if (ind <= 0)
+		{
+			best_node = *iter;
+			break;
+		}
+		ind--;
+	}
+	get_subproblems_splitted_by_vertex(g, best_node, subprobs);
+
+	return best_node;
+}
+
 int pivot_by_vertex_degree(DAG *g, std::pair<DAG, DAG> &best_sub_problems)
 {
 	int best_node = 0;
@@ -2310,6 +2340,29 @@ int pivot_by_flow_bidirectional(DAG *g, pair<DAG, DAG> &subprobs)
 	return best_node;
 }
 
+typedef int (*PivotFn)(DAG *, pair<DAG, DAG> &);
+static unordered_map<string, PivotFn> pivot_methods =
+{
+	{"random", pivot_by_random},
+	{"random_mpn", pivot_by_random_mpn},
+	{"bound", pivot_by_Bound_bidirectional},
+	{"degree", pivot_by_vertex_degree},
+	{"flow", pivot_by_flow_bidirectional},
+};
+static PivotFn pivot_func = pivot_by_random;
+
+void graph_alg_set_pivoting_method(const std::string &methodname)
+{
+	auto pos = pivot_methods.find(methodname);
+ 	if (pos == pivot_methods.end())
+	{
+		printf("Invalid pivoting method.\n");
+		exit(-1);
+	}
+	pivot_method = methodname;
+	pivot_func = pos->second;
+}
+
 // g(u), calculate the number of consistent sub-DAGs in a DAG g
 // CAUTION: for the regenerated dag we can't use the hashed value
 number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash = true)
@@ -2385,23 +2438,6 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 		pair<DAG, DAG> best_sub_problems;
 
 		int id = -1;
-		int (*pivot_func)(DAG *, pair<DAG, DAG> &);
-		if (pivot_method == "flow")
-		{
-			pivot_func = pivot_by_flow_bidirectional;
-		}
-		else if (pivot_method == "degree")
-		{
-			pivot_func = pivot_by_vertex_degree;
-		}
-		else if (pivot_method == "bound")
-		{
-			pivot_func = pivot_by_Bound_bidirectional;
-		}
-		else
-		{
-			pivot_func = pivot_by_random;
-		}
 		id = pivot_func(g, best_sub_problems);
 		//int id = pivot_by_vertex_degree(g, best_sub_problems);
 		//int id = pivot_by_Bound(g, best_sub_problems);
