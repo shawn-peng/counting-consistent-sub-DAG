@@ -6,7 +6,7 @@ endif
 
 CPPFLAGS+=$(OPT) -std=c++0x -lstdc++ -lgmpxx -lgmp -lboost_random -lm
 
-all: graph_alg graph_gen analyze_graph batch_graph_gen estimate_bound
+all: graph_alg graph_gen analyze_graph batch_graph_gen estimate_bound same_graph_gen
 
 graph_alg: main.o graph_alg.o dag_generator.o dag.o
 	$(CC) -o $@ $^ $(CPPFLAGS)
