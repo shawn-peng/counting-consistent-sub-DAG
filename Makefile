@@ -23,6 +23,9 @@ analyze_graph: analyze_graph.o dag_generator.o dag.o random_device.o
 estimate_bound: estimate_bound.o graph_alg.o dag_generator.o dag.o random_device.o
 	$(CC) -o $@ $^ $(CPPFLAGS)
 
+same_graph_gen: same_graph_gen.o dag_generator.o dag.o graph_alg.cpp random_device.o
+	$(CC) -o $@ $^ $(CPPFLAGS)
+
 %.o: %.cpp
 	$(CC) -c -o $@ $^ $(CPPFLAGS)
 
