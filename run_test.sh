@@ -16,14 +16,19 @@ if [ $? -ne 0 ]; then
 	exit 1
 fi
 
-params="--prune --hash --pivot flow --allow-reverse --sanity-check"
+if [ -z "$1" ]; then
+	echo "Usage: $0 <args_for_alg> ..."
+	exit 1
+fi
+
+alg_params="--sanity-check $*"
 
 trap "rm -f $lckf && echo 'Quit testing' && exit 0" SIGINT
 
 for gfile in $filelist;
 do
 	#echo $gfile
-	./graph_alg $gfile ${params} > ${logfile}
+	./graph_alg $gfile ${alg_params} > ${logfile}
 	if [[ $? != 0 ]]; then
 		break;
 	fi

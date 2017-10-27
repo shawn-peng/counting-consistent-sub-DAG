@@ -45,9 +45,15 @@ static bool g_using_hash = false;
 
 static bool using_pruning = false;
 
-static string pivot_method = "random";
+static string pivot_method = "random_mpn";
 
 static bool allow_reverse = false;
+
+
+
+static int recursion_depth = 0;
+
+
 
 typedef mpz_class number_t;
 //typedef double number_t;
@@ -145,24 +151,6 @@ void graph_alg_disable_reverse()
 {
 	allow_reverse = false;
 }
-
-static unordered_map<string, int> pivot_methods =
-{
-	{"random",0},
-	{"bound",0},
-	{"degree",0},
-	{"flow",0},
-};
-void graph_alg_set_pivoting_method(const std::string &methodname)
-{
-	if (pivot_methods.find(methodname) == pivot_methods.end())
-	{
-		printf("Invalid pivoting method.\n");
-		exit(-1);
-	}
-	pivot_method = methodname;
-}
-
 
 static unordered_map<string, number_t> hash_table;
 static int hash_tries = 0;
@@ -1494,6 +1482,190 @@ int enum_possibilities(DAG *g, DAG cur_subdag, list<Edge> fringe, IdList needed,
 
 	return 0;
 }
+int enum_possibilities_count(DAG *g, DAG cur_subdag, EdgeList fringe, number_t &total_count)
+{
+	int ret;
+
+	//print_edge_list(fringe);
+	//cur_subdag.print();
+
+	if (fringe.empty())
+	{
+		total_count++;
+		return 0;
+	}
+
+	Edge edge = fringe.front();
+	fringe.pop_front();
+
+	int vid = edge.second;
+
+	//not choosing this vertex
+
+	//fringe are copied for every call
+	enum_possibilities_count(g, cur_subdag, fringe, total_count);
+
+	//or choosing
+
+	//check multiple parents
+	ParentInfo &parent_info = get_parent_info(g);
+	int flag = 1;
+	int np = parent_info.parentNumMap[vid];
+	if (np > 1)
+	{
+		if (!check_parent(&cur_subdag, vid, parent_info.parentMap))
+		{
+			//this node can't be choosen
+			//Because we checked before putting the node into fringe,
+			//this shouldn't happen.
+			printf("%07d's parent is missing.\n", vid);
+			cur_subdag.print();
+			assert(0);
+			return 0;
+		}
+		if (check_node(&cur_subdag, vid))
+		{
+			//skip adding and expanding
+			enum_possibilities_count(g, cur_subdag, fringe, total_count);
+			return 0;
+		}
+		//all parent appear, and this node is not in cur_subdag,
+		//add edges from all parent to this node
+		cur_subdag.addVertex(vid);
+		IdList &parents = parent_info.parentMap[vid];
+		FOR_EACH_IN_CONTAINER(pidit, parents)
+		{
+			cur_subdag.addEdge(*pidit, vid);
+		}
+	}
+	else
+	{
+		if (!cur_subdag.checkVertex(vid))
+		{
+			cur_subdag.addVertex(vid);
+		}
+		//just add one Edge
+		cur_subdag.addEdge(edge.first, vid);
+	}
+
+	//expand current node
+	Vertex *v = g->findVertex(vid);
+	assert(v);
+	IdList childids;
+	v->getChildList(childids);
+	FOR_EACH_IN_CONTAINER_REVERSE(chidit, childids)
+	{
+		int chid = *chidit;
+		int np = parent_info.parentNumMap[chid];
+		if (np > 1)
+		{
+			//check if all direct parents are in cur_graph
+			if (!check_parent(&cur_subdag, chid, parent_info.parentMap))
+			{
+				continue;
+			}
+		}
+		fringe.push_front(Edge(vid, chid));
+	}
+	//fringe are copied for every call
+	enum_possibilities_count(g, cur_subdag, fringe, total_count);
+
+	return 0;
+}
+bool check_consistent(DAG *g, const DAG &subdag)
+{
+	IdList nodes;
+	subdag.getVertexList(nodes);
+	FOR_EACH_IN_CONTAINER(iter, nodes)
+	{
+		IdList parents;
+		g->getParentList(*iter, parents);
+		FOR_EACH_IN_CONTAINER(pit, parents)
+		{
+			if (!subdag.checkVertex(*pit))
+			{
+				return false;
+			}
+		}
+	}
+	return true;
+}
+int enum_possibilities_count_toobrute(DAG *g, DAG cur_subdag, IdList fringe, number_t &total_count)
+{
+	int ret;
+
+	if (fringe.empty())
+	{
+		if (check_consistent(g, cur_subdag))
+		{
+			total_count++;
+		}
+		return 0;
+	}
+
+	recursion_depth++;
+	for (int di = 1; di < recursion_depth; di++)
+	{
+		printf("  ");
+	}
+	printf("[%d] %d MP nodes left.\n", recursion_depth, fringe.size());
+
+	int node = fringe.front();
+	fringe.pop_front();
+
+	//not choosing this node
+	enum_possibilities_count_toobrute(g, cur_subdag, fringe, total_count);
+
+	//and choosing this node
+	cur_subdag.addVertex(node);
+	cur_subdag.addToRootList(node);
+
+	enum_possibilities_count_toobrute(g, cur_subdag, fringe, total_count);
+
+	recursion_depth--;
+	return 0;
+}
+number_t get_consistent_subdag_number(DAG *g, int rootid)
+{
+	int ret;
+
+	Vertex* vroot = g->findVertex(rootid);
+	if (vroot == NULL)
+	{
+		return 0;
+	}
+
+	ParentInfo *parentInfo = new ParentInfo();
+	PrivDataUnion privdata;
+	privdata.dptr = shared_ptr<void>(parentInfo);
+	privdata.type = DT_POINTER;
+	g->setPrivData(privdata);
+
+	ret = gen_parent_num_map(g, rootid);
+	ret = gen_parent_map(g, rootid);
+
+	DAG g0;
+	g0.addVertex(rootid);
+	g0.setSingleRoot(rootid);
+
+	EdgeList fringe;
+
+	IdList childids;
+	vroot->getChildList(childids);
+	FOR_EACH_IN_CONTAINER_REVERSE(chidit, childids)
+	{
+		if (parentInfo->parentNumMap[*chidit] > 1)
+		{
+			continue;
+		}
+		fringe.push_front(Edge(rootid,*chidit));
+	}
+
+	number_t total_count = 1;
+	enum_possibilities_count(g, g0, fringe, total_count);
+
+	return total_count;
+}
 
 //sanity check
 int get_consistent_subdag(DAG *g, int rootid, list<DAG> &subdags)
@@ -1846,8 +2018,6 @@ number_t count_consistent_subdag_adding_subdag(DAG *g, IdList mpnodes, const DAG
 
 	return total;
 }
-
-static int recursion_depth = 0;
 
 // g(u), calculate the number of consistent sub-DAGs in a DAG g
 // CAUTION: for the regenerated dag we can't use the hashed value
@@ -2255,6 +2425,30 @@ int pivot_by_random(DAG *g, pair<DAG, DAG> &subprobs)
 	return best_node;
 }
 
+int pivot_by_random_mpn(DAG *g, pair<DAG, DAG> &subprobs)
+{
+	IdList mpnodes;
+	g->getMultiParentVertices(mpnodes);
+
+	int n = mpnodes.size();
+	int ind = (double)(rand()) / RAND_MAX * n;
+	//printf("debug: random pivoting %d / %d.\n", ind, n);
+	int best_node = 0;
+
+	FOR_EACH_IN_CONTAINER(iter, mpnodes)
+	{
+		if (ind <= 0)
+		{
+			best_node = *iter;
+			break;
+		}
+		ind--;
+	}
+	get_subproblems_splitted_by_vertex(g, best_node, subprobs);
+
+	return best_node;
+}
+
 int pivot_by_vertex_degree(DAG *g, std::pair<DAG, DAG> &best_sub_problems)
 {
 	int best_node = 0;
@@ -2334,6 +2528,29 @@ int pivot_by_flow_bidirectional(DAG *g, pair<DAG, DAG> &subprobs)
 	return best_node;
 }
 
+typedef int (*PivotFn)(DAG *, pair<DAG, DAG> &);
+static unordered_map<string, PivotFn> pivot_methods =
+{
+	{"random", pivot_by_random},
+	{"random_mpn", pivot_by_random_mpn},
+	{"bound", pivot_by_Bound_bidirectional},
+	{"degree", pivot_by_vertex_degree},
+	{"flow", pivot_by_flow_bidirectional},
+};
+static PivotFn pivot_func = pivot_by_random;
+
+void graph_alg_set_pivoting_method(const std::string &methodname)
+{
+	auto pos = pivot_methods.find(methodname);
+ 	if (pos == pivot_methods.end())
+	{
+		printf("Invalid pivoting method.\n");
+		exit(-1);
+	}
+	pivot_method = methodname;
+	pivot_func = pos->second;
+}
+
 // g(u), calculate the number of consistent sub-DAGs in a DAG g
 // CAUTION: for the regenerated dag we can't use the hashed value
 number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash = true)
@@ -2409,23 +2626,6 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 		pair<DAG, DAG> best_sub_problems;
 
 		int id = -1;
-		int (*pivot_func)(DAG *, pair<DAG, DAG> &);
-		if (pivot_method == "flow")
-		{
-			pivot_func = pivot_by_flow_bidirectional;
-		}
-		else if (pivot_method == "degree")
-		{
-			pivot_func = pivot_by_vertex_degree;
-		}
-		else if (pivot_method == "bound")
-		{
-			pivot_func = pivot_by_Bound_bidirectional;
-		}
-		else
-		{
-			pivot_func = pivot_by_random;
-		}
 		id = pivot_func(g, best_sub_problems);
 		//int id = pivot_by_vertex_degree(g, best_sub_problems);
 		//int id = pivot_by_Bound(g, best_sub_problems);
