@@ -21,6 +21,7 @@ typedef mpz_class number_t;
 
 //sanity check
 int get_consistent_subdag(NS_DAG::DAG *g, int rootid, std::list<NS_DAG::DAG> &subdags);
+number_t get_consistent_subdag_number(NS_DAG::DAG *g, int rootid);
 
 number_t count_consistent_subdag(NS_DAG::DAG *g, int rootid, bool using_hash = true);
 number_t count_consistent_subdag(NS_DAG::DAG *g, const NS_DAG::IdList &rootlist, bool using_hash = true);
