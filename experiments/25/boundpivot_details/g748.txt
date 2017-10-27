@@ -7,4 +7,4 @@ Hit rates: -nan
 Hash count: 0
 Function count_consistent_subdag has been called 17 times.
 Function count_consistent_subdag_for_independent_subdag has been called 17 times.
-time: 29ms
+time: 19ms
