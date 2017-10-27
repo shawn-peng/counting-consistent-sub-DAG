@@ -63,3 +63,6 @@ toy/simdag
 
 # reverse data result
 data/rand_reverse/*_info.txt
+
+# experiments details
+experiments/*/*_details
