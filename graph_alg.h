@@ -27,6 +27,9 @@ number_t count_consistent_subdag(NS_DAG::DAG *g, const NS_DAG::IdList &rootlist,
 
 number_t estimate_upper_bound(NS_DAG::DAG *g, int method);
 
+int get_ancestors_subdag(NS_DAG::DAG *g, int id, NS_DAG::DAG &subdag);
+int get_descendants_subdag(NS_DAG::DAG *g, int id, NS_DAG::DAG &subdag);
+
 void free_dag(NS_DAG::DAG *g);
 
 //print statistics
