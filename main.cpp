@@ -114,6 +114,15 @@ int main(int argc, char *argv[])
 		{
 			brute_force = true;
 		}
+		else if (optstr == "--sanity-check")
+		{
+			verify_count = true;
+		}
+		else
+		{
+			printf("Argument %s is invalid.\n", optstr.c_str());
+			exit(-1);
+		}
 	}
 	DAG *g = create_dag_from_file(datafile);
 	g->generateRoots();
@@ -191,9 +200,12 @@ int main(int argc, char *argv[])
 	//printf("====================================================\n");
 	if (brute_force)
 	{
-		rootid = rootlist.front();
-		ret = get_consistent_subdag(g, rootid, subdags);
-		num = subdags.size() + 1;
+		if (g->getRootNum() > 1)
+		{
+			printf("Multi-roots graph not supported for brute-force method.\n");
+			exit(-1);
+		}
+		num = get_consistent_subdag_number(g, g->getFirstRoot());
 	}
 	else
 	{
