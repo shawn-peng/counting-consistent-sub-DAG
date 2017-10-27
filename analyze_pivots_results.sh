@@ -29,7 +29,7 @@ for f in `ls $detail_log_dir`; do
 	t=`cat ${detail_log_dir}${f} | sed -ne 's/time: \([0-9]*\)ms/\1/p'`
 	calls=`cat ${detail_log_dir}${f} | sed -ne 's/Function count_consistent_subdag_for_independent_subdag has been called \([0-9]*\) times./\1/p'`
 
-	cnt=`cat ${detail_log_dir}${f} | sed -ne 's/Num of consistent sub-DAG: \([0-9]*\)/\1/p'`
+	cnt=`cat ${detail_log_dir}${f} | sed -ne 's/^Num of consistent sub-DAG: \([0-9]*\)/\1/p'`
 
 	echo "$f	$cnt	$t	$calls" >> $result_file
 	

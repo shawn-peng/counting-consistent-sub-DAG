@@ -1,8 +1,0 @@
-Vertices: 25
-Num of consistent sub-DAG: 9477
-(Sanity check)Num of consistent sub-DAG: 0
-Hash tries: 0
-Hash hits: 0
-Hit rates: -nan
-Hash count: 0
-time: 750ms
