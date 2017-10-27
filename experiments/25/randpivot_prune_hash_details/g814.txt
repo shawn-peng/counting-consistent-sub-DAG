@@ -1,0 +1,12 @@
+Vertices: 25
+Num of consistent sub-DAG: 704
+(Sanity check)Num of consistent sub-DAG: 0
+Hash tries: 116
+Hash hits: 10
+Hit rates: 0.086207
+Hash count: 63
+Function count_consistent_subdag has been called 63 times.
+Function count_consistent_subdag_for_independent_subdag has been called 53 times.
+Function decompose_dag has been called 53 times.
+Function find_roots_consistent_to_vertices has been called 271 times.
+time: 21ms
