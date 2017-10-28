@@ -290,15 +290,15 @@ DAG *try_create_random_dag_with_depth(int n, int depth, rand_int_fn_t rand_fn)
 		prev_node = cur_node;
 	}
 
-	int sum = 0;
-	cerr << "in-degrees: ";
-	for (int i = 0; i < n; i++)
-	{
-		cerr << in_degrees[i] << " ";
-		sum += in_degrees[i];
-	}
-	cerr << endl;
-	cerr << "number of edges should be " << sum << endl;
+	//int sum = 0;
+	//cerr << "in-degrees: ";
+	//for (int i = 0; i < n; i++)
+	//{
+	//	cerr << in_degrees[i] << " ";
+	//	sum += in_degrees[i];
+	//}
+	//cerr << endl;
+	//cerr << "number of edges should be " << sum << endl;
 	
 	return g;
 }
