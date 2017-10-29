@@ -2940,6 +2940,24 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 
 	DAG modified;
 
+	if (allow_reverse)
+	{
+		// check scale on both direction
+		int nmp = g->getMPNodeNum();
+		int nmc = g->getMCNodeNum();
+
+		if (nmp > nmc)
+		{// we should count the reversed dag
+			modified = *g;
+			modified.reverse();
+			g = &modified;
+			if (debugging)
+			{
+				printf("counting reverse\n");
+			}
+		}
+	}
+
 	string vs;
 	get_signature(g, vs);
 	//printf("vertices: %s\n", vs.c_str());

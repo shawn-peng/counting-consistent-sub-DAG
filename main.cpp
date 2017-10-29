@@ -102,6 +102,10 @@ int main(int argc, char *argv[])
 			optstr = argv[i];
 			graph_alg_set_pivoting_method(optstr);
 		}
+		else if (optstr == "--allow-reverse")
+		{
+			graph_alg_enable_reverse();
+		}
 		else if (optstr == "--log")
 		{
 			graph_alg_enable_logging();

@@ -9,7 +9,7 @@ echo "Usage: $0 <mfo|cco|bpo> <level> [used|all]"
 exit 1
 fi
 
-params="--prune --hash --pivot flow --log"
+params="--prune --hash --pivot flow --allow-reverse --log"
 
 if [ -z "$categ" ]; then
 	#run both
