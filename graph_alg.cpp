@@ -958,7 +958,8 @@ int gen_mpnode_pathinfo(DAG *g, IdList mpnodes)
 			}
 			// check for the shallowest path
 			int cdepth = pinfo->depth;
-			if (cdepth != 0 && cdepth <= depth+1)
+			if (cdepth != 0 && depth+1 <= cdepth)
+			//if (cdepth != 0 && cdepth <= depth+1)
 			{
 				continue;
 			}
