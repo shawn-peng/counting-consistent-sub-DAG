@@ -1813,8 +1813,8 @@ number_t count_consistent_subdag_tree(DAG *g, int rootid)
 	return total;
 }
 
-//for multi-root tree case
-number_t count_consistent_subdag_tree(DAG *g)
+//for forest case
+number_t count_consistent_subdag_forest(DAG *g)
 {
 	number_t total = 1;
 	IdList children;
@@ -1830,149 +1830,6 @@ number_t count_consistent_subdag_tree(DAG *g)
 }
 
 
-void clear_nonleaf_counts(DAG *g, int id)
-{
-	IdList children;
-	g->getChildList(id, children);
-	if (children.size() != 0)
-	{
-		PrivDataUnion data = g->getPrivData(id);
-		number_t &num = get_num_from_priv_data(data);
-		if (num == 0)
-		{
-			// already cleaned following another path
-			return;
-		}
-		num = 0;
-		//set_num_to_priv_data(data, num);
-		g->setPrivData(id, data);
-		FOR_EACH_IN_CONTAINER(chit, children)
-		{
-			clear_nonleaf_counts(g, *chit);
-		}
-	}
-}
-/**
- * @desc after cutting the fixed path, some MP nodes might become SP nodes,
- * and it hasn't be counted into its parent. So we need to update this part
- * of parents and ancestors.
- *
- * @param g, DAG after cut
- * @param old_mpnodes, those node have multiple parents before cut
- */
-void update_info_after_cut(DAG *g, const IdList &old_mpnodes)
-{
-	ParentInfo &parent_info = get_parent_info(g);
-
-	parent_info.parentNumMap.clear();
-	parent_info.parentMap.clear();
-	// actually not necessary
-
-	IdList roots;
-	g->getRootList(roots);
-
-	FOR_EACH_IN_CONTAINER(rootit, roots)
-	{
-		int rootid = *rootit;
-		gen_parent_num_map(g, rootid);
-		gen_parent_map(g, rootid);
-
-		// clear counts for all non-leaf nodes
-		clear_nonleaf_counts(g, rootid);
-	}
-
-	//FOR_EACH_IN_CONTAINER(oldit, old_mpnodes)
-	//{
-	//	int id = *oldit;
-	//	if (parent_info.parentNumMap[id] == 1)
-	//	{
-	//		// there is only one parent
-	//		int pid = parent_info.parentMap[id].front();
-	//		number_t num = g->getPrivData(id).ddouble;
-	//		// old is 0 because it's MP node and it's not included in
-	//		// parents' counts
-	//		uppropagate_counts(g, pid, num, 0);
-	//	}
-	//}
-
-	return;
-}
-
-void clear_ancestor_counts(DAG *g, int id)
-{
-	PrivDataUnion data = g->getPrivData(id);
-	number_t num = get_num_from_priv_data(data);
-	if (num == 0)
-	{
-		return;
-	}
-
-	num = 0;
-	set_num_to_priv_data(data, num);
-	g->setPrivData(id, data);
-
-	IdList parents;
-	g->getParentList(id, parents);
-	FOR_EACH_IN_CONTAINER(iter, parents)
-	{
-		clear_ancestor_counts(g, *iter);
-	}
-	return;
-}
-
-
-// g(DAG|fixed) calculate using the cutting fixed path method
-number_t count_consistent_subdag_by_cutting_fixed_path(DAG *g, int fixed, const DAG &fixed_path)
-{
-	// profiling
-	func_calls[__FUNCTION__]++;
-
-	// copy DAG
-	DAG modified(*g);
-//	modified.copyVertexPrivData(*g);
-	//modified.clearVertexPrivData();
-	//modified.print(print_privdata_ptr);
-
-	// create parent info structure
-	ParentInfo *parentInfo = new ParentInfo();
-	PrivDataUnion privdata;
-	privdata.dptr = shared_ptr<void>(parentInfo);
-	privdata.type = DT_POINTER;
-	modified.setPrivData(privdata);
-
-	// cut fixed path
-	modified.removeSubdag(fixed_path);
-
-	// recalculate precalculated info (including parent info and counts)
-	IdList old_mpnodes;
-	get_mpnodes(g, old_mpnodes);
-	update_info_after_cut(&modified, old_mpnodes);
-
-	IdList rootlist;
-	modified.getRootList(rootlist);
-
-	number_t total;
-
-	// Check there is something left
-	if (rootlist.size() != 0)
-	{
-		//printf("DAG after fixed path cutted.\n");
-		//modified.print(print_privdata);
-		total = count_consistent_subdag(&modified);
-	}
-	else
-	{
-		// all nodes need to be fixed
-		printf("Nothing left after cut, all nodes in the DAG needs to be fixed.\n");
-		total = 1;
-	}
-
-	privdata.dptr.reset();
-	privdata.type = DT_EMPTY;
-	modified.setPrivData(privdata);
-
-	return total;
-}
 
 void get_subproblems_splitted_by_vertex(DAG *g, int id, DAG &g1, DAG &g2)
 {
@@ -2379,7 +2236,7 @@ number_t count_consistent_subdag_for_independent_subdag(
 
 	if (mpnodes.size() == 0)
 	{
-		total = count_consistent_subdag_tree(g);
+		total = count_consistent_subdag_forest(g);
 	}
 	//else if (mpnodes.size() < 3)
 	//{
@@ -2870,7 +2727,7 @@ int reduce_dag(DAG *g)
 	// remove this path, then what's left should be all trees
 	modified.removeSubdag(pathdag);
 	
-	count_consistent_subdag_tree(&modified);
+	count_consistent_subdag_forest(&modified);
 
 	roots.clear();
 	modified.getRootList(roots);
