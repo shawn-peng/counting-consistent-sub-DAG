@@ -1922,7 +1922,7 @@ void clear_ancestor_counts(DAG *g, int id)
 
 
 // g(DAG|fixed) calculate using the cutting fixed path method
-number_t count_consistent_subdag_by_cutting_fixed_path(DAG *g, int fixed, const DAG &fixed_path, bool using_hash = true)
+number_t count_consistent_subdag_by_cutting_fixed_path(DAG *g, int fixed, const DAG &fixed_path)
 {
 	// profiling
 	func_calls[__FUNCTION__]++;
@@ -1958,7 +1958,7 @@ number_t count_consistent_subdag_by_cutting_fixed_path(DAG *g, int fixed, const 
 	{
 		//printf("DAG after fixed path cutted.\n");
 		//modified.print(print_privdata);
-		total = count_consistent_subdag(&modified, rootlist, using_hash);
+		total = count_consistent_subdag(&modified);
 	}
 	else
 	{
@@ -1971,231 +1971,6 @@ number_t count_consistent_subdag_by_cutting_fixed_path(DAG *g, int fixed, const 
 	privdata.type = DT_EMPTY;
 	modified.setPrivData(privdata);
 
-	return total;
-}
-
-
-number_t count_consistent_subdag_adding_subdag(DAG *g, IdList mpnodes, const DAG &subdag, bool using_hash = true)
-{
-	// profiling
-	func_calls[__FUNCTION__]++;
-
-	// the root of subdag must be choosen(fixed)
-
-	//int rootid = g->getFirstRoot();
-
-	// even for multi-root DAG case, the subdag still have only one root
-	int srid = subdag.getFirstRoot();
-	DAG pathdag;
-	get_ancestors_subdag(g, srid, pathdag);
-	//pathdag.setSingleRoot(rootid);
-	//printf("--------------------------------------------\n");
-	//printf("Fixed path to root of node: %07d\n", srid);
-	//pathdag.print();
-
-	number_t total = 0;
-	IdList indep_mpnodes;
-	list<DAG> indepmp_pathcombs;
-
-	// get all independent MP nodes in current dag
-	FOR_EACH_IN_CONTAINER(mpniter, mpnodes)
-	{
-		Vertex *v = pathdag.findVertex(*mpniter);
-		if (v == NULL)
-		{
-			indep_mpnodes.push_back(*mpniter);
-		}
-	}
-
-	//printf("%d independent MP nodes to combine.\n", indep_mpnodes.size());
-	//printf("%d independent MP nodes in dag now.\n", indep_mpnodes.size());
-
-	// calculate the number of possibilities
-	//IdList exclude;
-	//total = count_consistent_subdag_by_combining_indep_mpnodes(
-	//		g, indep_mpnodes, exclude, srid, pathdag);
-
-	total = count_consistent_subdag_by_cutting_fixed_path(g, srid, pathdag, using_hash);
-
-	return total;
-}
-
-// g(u), calculate the number of consistent sub-DAGs in a DAG g
-// CAUTION: for the regenerated dag we can't use the hashed value
-number_t count_consistent_subdag_for_independent_subdag_nonrecursive(DAG *g, bool using_hash = true)
-{
-	// profiling
-	func_calls[__FUNCTION__]++;
-
-	string vs;
-	get_signature(g, vs);
-	// if we are verifying hash, we need to do the count
-	if (g_using_hash && !verify_hash)
-	{
-		//printf("vertices: %s\n", vs.c_str());
-		//printf("Hash count: %d\n", hash_table.size());
-		auto pos = hash_table.find(vs);
-		hash_tries++;
-		if (pos != hash_table.end())
-		{
-			hash_hits++;
-			//printf("Hash hit! (%d)\n", hash_hits);
-			//printf("Hashed count (%f)\n", pos->second);
-			//cout << "Hashed count " << pos->second << endl;
-			return pos->second;
-		}
-	}
-
-	//static int recursion_depth = 0;
-	recursion_depth++;
-
-	IdList mpnodes;
-	IdList roots;
-	g->getRootList(roots);
-	//if (roots.size() > 1)
-	//{
-	//	printf("the independent subdag have more than one root.\n");
-	//}
-//	int rootid = g->getFirstRoot();
-	list<DAG> extend_subdags;
-
-	DAG modified(*g);
-	// use the same parent info memory
-	modified.setPrivData(g->getPrivData());
-	// use same tree case count
-//	modified.copyVertexPrivData(*g);
-
-	ParentNumMap &parent_num_map = get_parent_info(g).parentNumMap;
-	FOR_EACH_IN_CONTAINER(iter, parent_num_map)
-	{
-		if (iter->second > 1)
-		{
-			int vid = iter->first;
-			Vertex *v = modified.findVertex(vid);
-			if (v != NULL)
-			{
-				remove_subdag_to_become_trees(
-						&modified, vid, extend_subdags);
-			}
-		}
-	}
-
-	number_t total;
-	total = count_consistent_subdag_tree(&modified);
-
-	//printf("Tree after remove:\n");
-	//modified.print(print_privdata);
-
-
-	//printf("--------------------------------------------\n");
-
-	FOR_EACH_IN_CONTAINER(iter, extend_subdags)
-	{
-		count_consistent_subdag_tree(&*iter);
-	}
-	//printf("Removed subdags:\n");
-	//print_subdag_list(extend_subdags, print_privdata);
-
-	//printf("--------------------------------------------\n");
-
-	ParentMap &parent_map = get_parent_info(g).parentMap;
-
-	while (!extend_subdags.empty())
-	{
-		DAG &subdag = extend_subdags.front();
-		int srid = subdag.getFirstRoot();
-
-		if (!check_parent(&modified, srid, parent_map))
-		{
-			// move to the end of list
-			extend_subdags.splice(extend_subdags.end(),
-					extend_subdags, extend_subdags.begin());
-			//printf("subdag %07d is moved to the end.\n", srid);
-			continue;
-		}
-
-		//printf("Adding subdag %07d...\n", srid);
-
-		// add it to current DAG and update
-
-		IdList parents;
-		get_parents(g, srid, parents);
-		//modified.addDAGAsChildOf(parents, subdag);
-		modified.transplantAsChildOf(parents, subdag);
-		// each subdag added only has one mpnode
-		mpnodes.push_back(srid);
-
-		// clear counts for the ancestors of the new added mp node
-		clear_ancestor_counts(&modified, srid);
-
-		//printf("after subdag added: \n");
-		//modified.print();
-
-		number_t num = count_consistent_subdag_adding_subdag(&modified, mpnodes, subdag, using_hash);
-		//printf("num for adding subdag %07d: %.0f\n", srid, num);
-		total += num;
-
-		extend_subdags.pop_front();
-
-		if (print_log)
-		{
-			//if (recursion_depth <= 20)
-			{
-				for (int di = 1; di < recursion_depth; di++)
-				{
-					printf("  ");
-				}
-				printf("[%d] %d MP nodes left.\n", recursion_depth, extend_subdags.size());
-			}
-		}
-	}
-
-	//cout << "the total is " << total << endl;
-
-//	printf("num for node %07d: %.0f.\n", rootid, total);
-//	PrivDataUnion priv;
-//	priv.ddouble = total;
-//	g->setPrivData(rootid, priv);
-	//printf("num for subdag with roots (");
-	//print_id_list(roots);
-	//printf("): %.0f.\n", total);
-
-	if (g_using_hash)
-	{
-		if (!verify_hash)
-		{
-			hash_table[vs] = total;
-		}
-		else
-		{
-			auto pos = hash_table.find(vs);
-			hash_tries++;
-			if (pos != hash_table.end())
-			{
-				// check with hashed count
-				hash_hits++;
-				if (debugging)
-				{
-					//printf("Hash hit! (%d)\n", hash_hits);
-				}
-				if (pos->second != total)
-				{
-					cout << "Error." << endl;
-					cout << "Hashed count " << pos->second
-						<< " compared to result count " << total << endl;
-					assert(0);
-				}
-			}
-			else
-			{
-				hash_table[vs] = total;
-			}
-		}
-		//printf("hash count: %d (%f)\n",
-		//		hash_table.size(), (number_t)hash_hits/hash_tries);
-	}
-
-	recursion_depth--;
 	return total;
 }
 
@@ -2554,7 +2329,8 @@ void graph_alg_set_pivoting_method(const std::string &methodname)
 
 // g(u), calculate the number of consistent sub-DAGs in a DAG g
 // CAUTION: for the regenerated dag we can't use the hashed value
-number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash = true)
+number_t count_consistent_subdag_for_independent_subdag(
+		DAG *g, IdList pivotlist = IdList())
 {
 	// profiling
 	func_calls[__FUNCTION__]++;
@@ -2625,9 +2401,21 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 		}
 
 		pair<DAG, DAG> best_sub_problems;
-
 		int id = -1;
-		id = pivot_func(g, best_sub_problems);
+
+		if (pivotlist.empty())
+		{
+			id = pivot_func(g, best_sub_problems);
+		}
+		else
+		{
+			while (!g->checkVertex(id))
+			{
+				id = pivotlist.front();
+				pivotlist.pop_front();
+			}
+			get_subproblems_splitted_by_vertex(g, id, best_sub_problems);
+		}
 		//int id = pivot_by_vertex_degree(g, best_sub_problems);
 		//int id = pivot_by_Bound(g, best_sub_problems);
 
@@ -2645,24 +2433,24 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 			subdag_count = 2;
 		}
 
-		IdList roots1, roots2;
+		//IdList roots1, roots2;
 
 		DAG &mA = best_sub_problems.first;
-		mA.getRootList(roots1);
-		number_t num1 = count_consistent_subdag(&mA, roots1, using_hash);
-		roots1.clear();
+		//mA.getRootList(roots1);
+		number_t num1 = count_consistent_subdag(&mA, pivotlist);
+		//roots1.clear();
 
 		DAG &mD = best_sub_problems.second;
-		mD.getRootList(roots2);
-		number_t num2 = count_consistent_subdag(&mD, roots2, using_hash);
-		roots2.clear();
+		//mD.getRootList(roots2);
+		number_t num2 = count_consistent_subdag(&mD, pivotlist);
+		//roots2.clear();
 
 		if (verify_alg)
 		{
 			DAG rmA(mA);
 			rmA.reverse();
-			rmA.getRootList(roots1);
-			number_t num1_c = count_consistent_subdag(&rmA, roots1, using_hash);
+			//rmA.getRootList(roots1);
+			number_t num1_c = count_consistent_subdag(&rmA, pivotlist);
 			if (num1 != num1_c)
 			{
 				cout << "found a BUG:" << endl;
@@ -2683,8 +2471,8 @@ number_t count_consistent_subdag_for_independent_subdag(DAG *g, bool using_hash 
 
 			DAG rmD(mD);
 			rmD.reverse();
-			rmD.getRootList(roots2);
-			number_t num2_c = count_consistent_subdag(&rmD, roots2, using_hash);
+			//rmD.getRootList(roots2);
+			number_t num2_c = count_consistent_subdag(&rmD, pivotlist);
 			if (num2 != num2_c)
 			{
 				cout << "found a BUG:" << endl;
@@ -2777,7 +2565,7 @@ DAG *find_subdag_has(int id, list<DAG> &subdags)
 }
 
 // pruning inplace
-int prune_independent_subdags(DAG *g, bool using_hash)
+int prune_independent_subdags(DAG *g, IdList pivotlist)
 {
 	DAG &modified = *g;
 
@@ -2830,7 +2618,7 @@ int prune_independent_subdags(DAG *g, bool using_hash)
 		subdag->getRootList(subroots);
 
 		//number_t num = count_consistent_subdag_for_independent_subdag(subdag);
-		number_t num = count_consistent_subdag(subdag, subroots, using_hash);
+		number_t num = count_consistent_subdag(subdag, pivotlist);
 		//printf("count is %f\n", num);
 
 		// generate subkey
@@ -2914,20 +2702,9 @@ int prune_independent_subdags(DAG *g, bool using_hash)
 }
 
 
-// g(u), calculate the number of consistent sub-DAGs in a DAG g
-// but first try to decompose the DAG into several independent parts,
-// such that we may reduce the number of independent MP vertices.
-number_t count_consistent_subdag(DAG *g, int rootid, bool using_hash)
-{
-	IdList rootlist;
-	rootlist.push_back(rootid);
-	return count_consistent_subdag(g, rootlist, using_hash);
-}
-
 //g(u), similar to previous one, but can take multiple roots
-number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash)
+number_t count_consistent_subdag(DAG *g, IdList pivotlist)
 {
-
 	// profiling
 	func_calls[__FUNCTION__]++;
 
@@ -2982,6 +2759,8 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 	if (using_pruning)
 	{
 		modified = *g;
+		IdList rootlist;
+		modified.getRootList(rootlist);
 
 		ParentInfo *parentInfo = new ParentInfo();
 		PrivDataUnion privdata;
@@ -2992,7 +2771,7 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 		gen_parent_num_map(&modified, rootlist);
 		gen_parent_map(&modified, rootlist);
 
-		prune_independent_subdags(&modified, using_hash);
+		prune_independent_subdags(&modified, pivotlist);
 
 		// pointing to the new DAG
 		g = &modified;
@@ -3000,7 +2779,7 @@ number_t count_consistent_subdag(DAG *g, const IdList &rootlist, bool using_hash
 
 
 	// get combination
-	number_t total = count_consistent_subdag_for_independent_subdag(g, using_hash);
+	number_t total = count_consistent_subdag_for_independent_subdag(g, pivotlist);
 	//printf("the total is %f\n", total);
 	//cout << "the total is " << total << endl;
 	//modified.print(print_privdata);
@@ -3213,7 +2992,7 @@ number_t estimate_upper_bound(DAG *g, int method)
 
 	IdList roots;
 	modified.getRootList(roots);
-	return count_consistent_subdag(&modified, roots);
+	return count_consistent_subdag(&modified);
 }
 
 

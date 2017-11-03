@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
 			rg.reverse();
 			IdList rroots;
 			rg.getRootList(rroots);
-			check_num = count_consistent_subdag(&rg, rroots);
+			check_num = count_consistent_subdag(&rg);
 			graph_alg_clear_hash();
 		}
 	}
@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
 	//printf("Num of consistent sub-DAG: %.0f\n", num);
 	//printf("====================================================");
 	//printf("====================================================\n");
-	num = count_consistent_subdag(g, rootlist);
+	num = count_consistent_subdag(g);
 
 	high_resolution_clock::time_point t2 = high_resolution_clock::now();
 

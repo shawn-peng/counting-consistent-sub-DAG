@@ -115,9 +115,9 @@ void output_rand_dag(int nv, int depth)
 			continue;
 		}
 
-		IdList roots;
-		g->getRootList(roots);
-		number_t x = count_consistent_subdag(g, roots);
+		//IdList roots;
+		//g->getRootList(roots);
+		number_t x = count_consistent_subdag(g);
 		graph_alg_clear_hash();
 
 		if (g_count != x)
