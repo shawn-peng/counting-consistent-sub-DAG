@@ -7,18 +7,6 @@ verbatimtex
 \begin{document}
 etex
 
-vardef drawzzarrow(suffix a,b) =
-    save v;
-    newCircle.v("") "filled(true)","circmargin(0.05in)";
-    numeric r[];
-    r1 = xpart(a.e - a.w)/2;
-    r2 = xpart(v.e - v.w)/2;
-    pair x;
-    x = (a.c--b.c) intersectionpoint BpathCircle(a);
-    a.c - x = (v.c - x) * (r1/r2);
-    drawObj(v);
-    nczigzag(a)(b), "linetension(0.8)", "coilarmA(0mm)", "coilarmB(2mm)", "coilwidth(2mm)", "linearc(.1mm)";
-enddef;
 
 beginfig(1);
     pair anchor[];
