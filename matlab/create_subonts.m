@@ -4,8 +4,9 @@
 % assume the ontology is stored as the variable 'ont'
 
 % output folder:
-odir = '~/Projects/cdag/data/ontologies/levels';
-ontstr = 'hpo';
+% odir = '~/Projects/cdag/data/ontologies/levels';
+odir = '~/mfo';
+ontstr = 'mfo';
 prefix = 'used'; % 'all' or 'used'
 
 L = pfp_level(ont); % full levels
@@ -33,4 +34,4 @@ clear odir ontstr prefix L l filename subont
 % Yuxiang Jiang (yuxjiang@indiana.edu)
 % Department of Computer Science
 % Indiana University, Bloomington
-% Last modified: Thu 25 May 2017 02:48:05 PM E
+% Last modified: Thu 26 Oct 2017 05:50:39 PM E
