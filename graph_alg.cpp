@@ -152,7 +152,8 @@ void graph_alg_disable_reverse()
 	allow_reverse = false;
 }
 
-static unordered_map<string, number_t> hash_table;
+//static unordered_map<string, number_t> hash_table;
+static map<string, number_t> hash_table;
 static int hash_tries = 0;
 static int hash_hits = 0;
 
@@ -2074,7 +2075,7 @@ number_t count_consistent_subdag_for_independent_subdag(
 				{
 					printf("  ");
 				}
-				printf("[%d] %d MP nodes left.\n",
+				printf("[%d] %d MP nodes left.",
 						recursion_depth, mpnodes.size());
 			}
 		}
@@ -2082,19 +2083,25 @@ number_t count_consistent_subdag_for_independent_subdag(
 		pair<DAG, DAG> best_sub_problems;
 		int id = -1;
 
-		if (pivotlist.empty())
+		while(1)
 		{
-			id = pivot_func(g, best_sub_problems);
-		}
-		else
-		{
-			while (!g->checkVertex(id))
+			if (pivotlist.empty())
 			{
-				id = pivotlist.front();
-				pivotlist.pop_front();
+				id = pivot_func(g, best_sub_problems);
+				break;
 			}
-			get_subproblems_splitted_by_vertex(g, id, best_sub_problems);
+
+			id = pivotlist.front();
+			pivotlist.pop_front();
+			if (g->checkVertex(id))
+			{
+				printf(" node in pivotlist: %d", id);
+				get_subproblems_splitted_by_vertex(g, id, best_sub_problems);
+				break;
+			}
 		}
+		printf("\n");
+
 		//int id = pivot_by_vertex_degree(g, best_sub_problems);
 		//int id = pivot_by_Bound(g, best_sub_problems);
 
@@ -2435,7 +2442,7 @@ number_t count_consistent_subdag(DAG *g, IdList pivotlist)
 		}
 	}
 
-	if (using_pruning)
+	if (using_pruning && pivotlist.empty())
 	{
 		modified = *g;
 		IdList rootlist;
