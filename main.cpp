@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include <iostream>
+#include <fstream>
 #include <sstream>
 #include <iomanip>
 #include <chrono>
@@ -78,6 +79,7 @@ int main(int argc, char *argv[])
 	const char *datafile = "data/basic_graphs/mini-tree.txt";
 	int rootid = 1;
 	IdList rootlist;
+	IdList pivotlist;
 	if (argc >= 2)
 	{
 		datafile = argv[1];
@@ -100,12 +102,29 @@ int main(int argc, char *argv[])
 			optstr = argv[i];
 			graph_alg_set_pivoting_method(optstr);
 		}
+		else if (optstr == "--pivot-file")
+		{
+			int id;
+			i++;
+			optstr = argv[i];
+			ifstream ps(optstr);
+			while (1)
+			{
+				ps >> id;
+				if (!ps.good())
+				{
+					break;
+				}
+				pivotlist.push_back(id);
+			}
+		}
 		else if (optstr == "--allow-reverse")
 		{
 			graph_alg_enable_reverse();
 		}
 		else if (optstr == "--log")
 		{
+			//print_log = true;
 			graph_alg_enable_logging();
 		}
 		else if (optstr == "--reverse")
@@ -132,6 +151,16 @@ int main(int argc, char *argv[])
 	if (print_log)
 	{
 		g->print();
+	}
+
+	if (!pivotlist.empty())
+	{
+		cout << "Pivoting list: ";
+		FOR_EACH_IN_CONTAINER(iter, pivotlist)
+		{
+			cout << *iter << " ";
+		}
+		cout << endl;
 	}
 
 	printf("Vertices: %d\n", g->getVertexNum());
@@ -191,7 +220,7 @@ int main(int argc, char *argv[])
 	//printf("Num of consistent sub-DAG: %.0f\n", num);
 	//printf("====================================================");
 	//printf("====================================================\n");
-	num = count_consistent_subdag(g);
+	num = count_consistent_subdag(g, pivotlist);
 
 	high_resolution_clock::time_point t2 = high_resolution_clock::now();
 

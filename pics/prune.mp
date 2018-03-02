@@ -112,29 +112,29 @@ beginfig(1);
     drawzzarrow(ostem, D);
 
     label(btex $u$ etex, v5.c shifted (0.25unit2,-0.18unit2));
-    label.lft(btex $\mathcal{O}^{stem}$ etex, ostem.w);
-    label.lft(btex $\mathcal{D}(u)$ etex, D.w);
+    label.lft(btex $\mathcal{O}^{st}$ etex, ostem.w);
+    label.lft(btex $\mathcal{O}^{br}$ etex, D.w);
 
     %%%%%%%%%%%
     %% figure 3
     %%%%%%%%%%%
-    % a: O^{stem}
-    % b: D1
-    % c: D2
-    % d: D3
-    % e: D4
-    % g: D5
-    newCircle.a(btex $\mathcal{O}^{stem}$ etex)
+    % a: O^{st}
+    % b: O^{br}_1
+    % c: O^{br}_2
+    % d: O^{br}_3
+    % e: O^{br}_4
+    % g: O^{br}_5
+    newCircle.a(btex $\mathcal{O}^{st}$ etex)
         "circmargin(0.4in)","framewidth(1.5bp)","framestyle(dashed evenly)";
-    newCircle.b(btex $\mathcal{D}_{1}$ etex)
+    newCircle.b(btex $\mathcal{O}^{br}_{1}$ etex)
         "circmargin(0.1in)","framewidth(1.5bp)","framestyle(dashed evenly)";
-    newCircle.c(btex $\mathcal{D}_{2}$ etex)
+    newCircle.c(btex $\mathcal{O}^{br}_{2}$ etex)
         "circmargin(0.2in)","framewidth(1.5bp)","framestyle(dashed evenly)";
-    newCircle.d(btex $\mathcal{D}_{3}$ etex)
+    newCircle.d(btex $\mathcal{O}^{br}_{3}$ etex)
         "circmargin(0.05in)","framewidth(1.5bp)","framestyle(dashed evenly)";
-    newCircle.e(btex $\mathcal{D}_{4}$ etex)
+    newCircle.e(btex $\mathcal{O}^{br}_{4}$ etex)
         "circmargin(0.3in)","framewidth(1.5bp)","framestyle(dashed evenly)";
-    newCircle.g(btex $\mathcal{D}_{5}$ etex)
+    newCircle.g(btex $\mathcal{O}^{br}_{5}$ etex)
         "circmargin(0.25in)","framewidth(1.5bp)","framestyle(dashed evenly)";
 
     a.c = anchor3 shifted (1.2in, -0.6in);

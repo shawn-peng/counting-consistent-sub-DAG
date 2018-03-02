@@ -14,7 +14,7 @@ $cur_line = 1;
 #print "Initial stack:  @stack \n";
 $exlines = 0;
 while (<>) {
-	if (my ($line, $level, $mpnnum) = /( *\[(\d+)\] (\d+) MP nodes left.)/) {
+	if (my ($line, $level, $mpnnum) = /( *\[(\d+)\] (\d+) MP nodes left..*)/) {
 		#print "$line $level $mpnnum\n";
 		while ($level < $cur_level) {
 			#go up line and clear current line
