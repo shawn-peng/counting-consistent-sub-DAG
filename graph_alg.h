@@ -21,11 +21,15 @@ typedef mpz_class number_t;
 
 //sanity check
 int get_consistent_subdag(NS_DAG::DAG *g, int rootid, std::list<NS_DAG::DAG> &subdags);
+number_t get_consistent_subdag_number(NS_DAG::DAG *g, int rootid);
 
 number_t count_consistent_subdag(NS_DAG::DAG *g, int rootid, bool using_hash = true);
 number_t count_consistent_subdag(NS_DAG::DAG *g, const NS_DAG::IdList &rootlist, bool using_hash = true);
 
 number_t estimate_upper_bound(NS_DAG::DAG *g, int method);
+
+int get_ancestors_subdag(NS_DAG::DAG *g, int id, NS_DAG::DAG &subdag);
+int get_descendants_subdag(NS_DAG::DAG *g, int id, NS_DAG::DAG &subdag);
 
 void free_dag(NS_DAG::DAG *g);
 
@@ -43,6 +47,9 @@ void graph_alg_disable_logging();
 
 void graph_alg_enable_pruning();
 void graph_alg_disable_pruning();
+
+void graph_alg_enable_reverse();
+void graph_alg_disable_reverse();
 
 void graph_alg_set_pivoting_method(const std::string &methodname);
 

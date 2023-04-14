@@ -8,8 +8,8 @@
 
 % output folder:
 % odir = '~/Projects/cdag/data/ontologies/levels';
-odir = '~/temp';
-ontstr = 'bpo';
+odir = '~/mfo';
+ontstr = 'mfo';
 prefix = 'used'; % 'all' or 'used'
 
 L = pfp_level(ont); % full levels
@@ -45,4 +45,8 @@ clear odir ontstr prefix L l filename subont terms used_terms
 % Yuxiang Jiang (yuxjiang@indiana.edu)
 % Department of Computer Science
 % Indiana University, Bloomington
+<<<<<<< HEAD
 % Last modified: Sat 22 Jul 2017 09:40:50 AM E
+=======
+% Last modified: Thu 26 Oct 2017 05:50:39 PM E
+>>>>>>> master

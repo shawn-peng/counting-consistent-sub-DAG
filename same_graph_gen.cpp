@@ -1,6 +1,7 @@
 #include "dag.h"
 #include "dag_generator.h"
 #include "graph_alg.h"
+#include "common.h"
 
 #include <string>
 #include <iostream>
@@ -55,12 +56,43 @@ static string data_dir = "data/same_count/";
 
 static number_t g_count = 0;
 
-void output_rand_dag(int nv)
+
+int remove_redundant_edges(DAG *g)
+{
+	IdList nodes;
+	g->getVertexList(nodes);
+	FOR_EACH_IN_CONTAINER(iter, nodes)
+	{
+		int id = *iter;
+		IdList parents;
+		g->getParentList(id, parents);
+
+		FOR_EACH_IN_CONTAINER(pit, parents)
+		{
+			int parent = *pit;
+			DAG pA;
+			get_ancestors_subdag(g, parent, pA);
+			FOR_EACH_IN_CONTAINER(opit, parents)
+			{
+				int otherp = *opit;
+				if (otherp != parent && pA.checkVertex(otherp))
+				{
+					g->removeEdge(otherp, id);
+					//cerr << "removing " << otherp << "->" << id << endl;
+				}
+			}
+		}
+	}
+
+	return 0;
+}
+
+void output_rand_dag(int nv, int depth)
 {
 	int backstdout = dup(STDOUT_FILENO);
 
 	stringstream ss;
-	ss << data_dir << nv << "_" << depth << "/";
+	ss << data_dir << nv << "/";
 	string subdir = ss.str();
 
 	DAG *g;
@@ -74,7 +106,7 @@ void output_rand_dag(int nv)
 		dist = Dist_t(lambda);
 		generator = new Generator_t(randGen, dist);
 
-		g = create_random_dag(nv, Rand);
+		g = create_random_dag_with_depth(nv, depth, Rand);
 		if (g == NULL)
 		{
 			delete generator;
@@ -102,6 +134,8 @@ void output_rand_dag(int nv)
 				continue;
 			}
 		}
+
+		remove_redundant_edges(g);
 
 		struct stat st = {0};
 
@@ -153,8 +187,13 @@ int main(int argc, char **argv)
 	//string categ;
 	stringstream ss;
 
+	graph_alg_enable_hashing();
+	graph_alg_enable_pruning();
+	graph_alg_set_pivoting_method("degree");
+
 	nv = 20;
-	output_rand_dag(nv);
+	depth = 7;
+	output_rand_dag(nv, depth);
 
 
 

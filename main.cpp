@@ -100,6 +100,10 @@ int main(int argc, char *argv[])
 			optstr = argv[i];
 			graph_alg_set_pivoting_method(optstr);
 		}
+		else if (optstr == "--allow-reverse")
+		{
+			graph_alg_enable_reverse();
+		}
 		else if (optstr == "--log")
 		{
 			graph_alg_enable_logging();
@@ -107,6 +111,10 @@ int main(int argc, char *argv[])
 		else if (optstr == "--reverse")
 		{
 			reverse_count = true;
+		}
+		else if (optstr == "--sanity-check")
+		{
+			verify_count = true;
 		}
 	}
 	DAG *g = create_dag_from_file(datafile);

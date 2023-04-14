@@ -168,6 +168,9 @@ public:
 	int getVertexString(std::string &str) const;
 
 	int getMultiParentVertices(IdList &list) const;
+	int getMultiChildVertices(IdList &list) const;
+	int getMPNodeNum() const;
+	int getMCNodeNum() const;
 
 	void setSingleRoot(int id);
 	int getFirstRoot() const;

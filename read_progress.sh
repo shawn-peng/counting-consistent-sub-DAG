@@ -2,6 +2,10 @@
 
 logfile=$1
 
-{ cat $logfile && tail -f $logfile; } | ./read_progress.pl
+if [ "$2" == "-f" ]; then
+	{ cat $logfile && tail -f $logfile; } | ./read_progress.pl
+else
+	cat $logfile | ./read_progress.pl
+fi
 
 
