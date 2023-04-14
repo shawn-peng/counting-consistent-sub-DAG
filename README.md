@@ -1,9 +1,9 @@
 # Algorithm to count the number of consistent sub-DAGs in a DAG(Directed Acyclic Graph)
 
 ## Usage
-To run the program, execute "./graph_alg FILE", where "FILE" is the DAG
-datafile to be used. If the FILE argument isn't given, the default file used is
-"./data/Graph/mini-tree.txt".
+To run the program, execute "./graph_alg <FILE> [ROOTID]", where "<FILE>" is the DAG
+datafile to be used. If the <FILE> argument isn't given, the default file used is
+"./data/basic_graphs/mini-tree.txt". Then "[ROOTID]" is the id of root for the DAG.
 
 ## Detail Explanation
 https://github.com/shawn-peng/counting-consistent-sub-DAG/blob/master/shawn_peng_proj.pdf
@@ -17,7 +17,7 @@ count_consistent_subdag(G, rootid)
 	modified = copy(G);
 	mpnodes = find nodes with multiple parents;
 	modified, decomp_subdags = decompose_dag(modified, mpnodes);
-	
+
 	for_each(subdag in decomp_subdags)
 	{
 		num = count_consistent_subdag(subdag, subdag.rootid);
@@ -35,7 +35,7 @@ count_consistent_subdag(G, rootlist)
 	modified = copy(G);
 	mpnodes = find nodes with multiple parents;
 	modified, decomp_subdags = decompose_dag(modified, mpnodes);
-	
+
 	for_each(subdag in decomp_subdags)
 	{
 		num = count_consistent_subdag(subdag, subdag.rootid);
@@ -71,14 +71,14 @@ count_consistent_subdag_for_independent_subdag(G)
 		modified = remove_subdag_to_become_trees(
 					modified, node.id, &extend_subdags);
 	}
-	
+
 	total = count_consistent_subdag_tree(modified);
-	
+
 	// add things back
 	while(extend_subdags not empty)
 	{
 		subdag = extend_subdags.pop();
-		
+
 		check dependency for subdag.root;
 		if (failed)
 		{
@@ -86,16 +86,16 @@ count_consistent_subdag_for_independent_subdag(G)
 			extend_subdags.push_back(subdag);
 			continue;
 		}
-		
+
 		num = count_consistent_subdag_tree(subdag);
-		
+
 		modified.add_node(subdag.rootid);
 		modified.set_node_count(subdag.rootid, num);
-		
+
 		total += count_consistent_subdag_adding_subdag(
 					modified, mpnodes, subdag);
 	}
-	
+
 	return total;
 }
 ```
@@ -121,7 +121,7 @@ remove_subdag_to_become_trees(&G, rootid, &extend_subdags)
 			fringe.insert_front(children);
 		}
 	}
-	
+
 	subdag = sub-DAG can be reached from node with id=rootid
 	G.remove_subdag(subdag);
 	extend_subdags.push_back(subdag)
@@ -156,9 +156,9 @@ count_consistent_subdag_by_cutting_fixed_path(G,
 	modified = copy(G);
 	// cut fixed path
 	modified.removeSubdag(fixed_path);
-	
+
 	rootlist = modified.getRootList();
-	
+
 	total = 1; // the case for only the path presenting
 
 	// Check whether there is something left
@@ -167,9 +167,7 @@ count_consistent_subdag_by_cutting_fixed_path(G,
 		total += count_consistent_subdag(
 					modified, rootlist);
 	}
-	
+
 	return total;
 }
 ```
-
-
